@@ -1,25 +1,25 @@
 
-var orm = require(__dirname+'/../lib/orm'),
-	Model = require(__dirname+'/../lib/Model'),
-	assert = require('assert');
+var assert = require('assert'),
+	ron = require('ron'),
+	Model = ron.Model;
 
 module.exports = {
 	'Test creation': function(callback){
 		// Test return instance
-		assert.ok(orm.create('TestCreation') instanceof Model);
+		assert.ok(ron.create('TestCreation') instanceof Model);
 		// Test registration
-		var model = orm.create('TestCreation');
-		assert.eql(orm.TestCreation, model);
+		var model = ron.create('TestCreation');
+		assert.eql(ron.TestCreation, model);
 		assert.eql('TestCreation', model.name);
 	},
 	'Test properties': function(callback){
-		var model = orm.create('TestProperties');
+		var model = ron.create('TestProperties');
 		['get','put','delete'].forEach(function(method){
 			assert.eql('function', typeof model[method]);
 		})
 	},
 	'Test CRUD': function(callback){
-		var model = orm.create('TestCRUD');
+		var model = ron.create('TestCRUD');
 		var data = { property: 'value' };
 		// Test creation
 		model.put(data, function(err,record){
@@ -41,14 +41,14 @@ module.exports = {
 					model.delete(id,function(err,success){
 						assert.ifError(err);
 						assert.ok(success);
-						orm.quit();
+						ron.quit();
 					});
 				});
 			});
 		});
 	},
 	'Test delete': function(callback){
-		var model = orm.create('TestDelete');
+		var model = ron.create('TestDelete');
 		var data = { property: 'value' };
 		// Test creation
 		model.put(data, function(err,record){
@@ -60,13 +60,13 @@ module.exports = {
 				model.delete(record.id,function(err,success){
 					assert.ifError(err);
 					assert.ok(!success);
-					orm.quit();
+					ron.quit();
 				});
 			});
 		})
 	},
 	'Test list and clear': function(callback){
-		var model = orm.create('TestDelete');
+		var model = ron.create('TestDelete');
 		var data = { property: 'value' };
 		// Create 2 records
 		model.put({ property: 'value 1' }, function(err,record){
@@ -82,7 +82,7 @@ module.exports = {
 						model.list(function(err,ids){
 							assert.ifError(err);
 							assert.eql(0,ids.length);
-							orm.quit();
+							ron.quit();
 						});
 					});
 				});
@@ -90,7 +90,7 @@ module.exports = {
 		})
 	},
 	'Test put': function(callback){
-		var model = orm.create('TestPut');
+		var model = ron.create('TestPut');
 		var data = { property: 'value' };
 		// Create 2 records
 		model.put({ property_1: 'value 1' }, function(err,record){
@@ -106,14 +106,14 @@ module.exports = {
 					assert.eql('value 2',record.property_2);
 					// Clear all ids
 					model.clear(function(err,ids){
-						orm.quit();
+						ron.quit();
 					});
 				});
 			})
 		})
 	},
 	'Test get properties': function(callback){
-		var model = orm.create('TestGetProperties');
+		var model = ron.create('TestGetProperties');
 		var data = { property: 'value' };
 		// Create 2 records
 		model.put({
@@ -129,7 +129,7 @@ module.exports = {
 				assert.eql('value 3',record.property_3);
 				// Clear all ids
 				model.clear(function(err,ids){
-					orm.quit();
+					ron.quit();
 				});
 			});
 		})
