@@ -7,6 +7,7 @@ module.exports = {
 	'Test define': function(callback){
 		var model = ron.create('TestUniqueDefine').unique('property');
 		assert.ok(model.properties.property.unique);
+		callback();
 	},
 	'Test put': function(callback){
 		var model = ron.create('TestUniquePut').unique('unique_property');
@@ -41,7 +42,8 @@ module.exports = {
 						assert.eql(1,length);
 						model.clear(function(err){
 							assert.ifError(err);
-							ron.quit();
+							// ron.quit();
+							callback();
 						});
 					})
 				});
@@ -70,7 +72,8 @@ module.exports = {
 					assert.eql('none',type);
 				});
 				multi.exec(function(err,results){
-					ron.quit();
+					// ron.quit();
+					callback();
 				});
 			});
 		});
@@ -86,7 +89,8 @@ module.exports = {
 				assert.eql('my value',record.property);
 				model.clear(function(err){
 					assert.ifError(err);
-					ron.quit();
+					// ron.quit();
+					callback();
 				});
 			});
 		});
@@ -115,10 +119,15 @@ module.exports = {
 				});
 				multi.exec(function(err,results){
 					model.clear(function(err){
-						ron.quit();
+						// ron.quit();
+						callback();
 					});
 				});
 			});
 		});
+	},
+	'quit': function(callback){
+		ron.quit();
+		callback();
 	}
 }

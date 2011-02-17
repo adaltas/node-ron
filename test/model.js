@@ -11,12 +11,14 @@ module.exports = {
 		var model = ron.create('TestCreation');
 		assert.eql(ron.TestCreation, model);
 		assert.eql('TestCreation', model.name);
+		callback();
 	},
 	'Test properties': function(callback){
 		var model = ron.create('TestProperties');
 		['get','put','delete'].forEach(function(method){
 			assert.eql('function', typeof model[method]);
-		})
+		});
+		callback();
 	},
 	'Test CRUD': function(callback){
 		var model = ron.create('TestCRUD');
@@ -41,7 +43,7 @@ module.exports = {
 					model.delete(id,function(err,success){
 						assert.ifError(err);
 						assert.ok(success);
-						ron.quit();
+						callback();
 					});
 				});
 			});
@@ -60,7 +62,7 @@ module.exports = {
 				model.delete(record.id,function(err,success){
 					assert.ifError(err);
 					assert.ok(!success);
-					ron.quit();
+					callback();
 				});
 			});
 		})
@@ -82,7 +84,7 @@ module.exports = {
 						model.list(function(err,ids){
 							assert.ifError(err);
 							assert.eql(0,ids.length);
-							ron.quit();
+							callback();
 						});
 					});
 				});
@@ -106,7 +108,7 @@ module.exports = {
 					assert.eql('value 2',record.property_2);
 					// Clear all ids
 					model.clear(function(err,ids){
-						ron.quit();
+						callback();
 					});
 				});
 			})
@@ -114,8 +116,6 @@ module.exports = {
 	},
 	'Test get properties': function(callback){
 		var model = ron.create('TestGetProperties');
-		var data = { property: 'value' };
-		// Create 2 records
 		model.put({
 			property_1: 'value 1',
 			property_2: 'value 2',
@@ -127,11 +127,52 @@ module.exports = {
 				assert.eql('value 1',record.property_1);
 				assert.eql('undefined',typeof record.property_2);
 				assert.eql('value 3',record.property_3);
-				// Clear all ids
+				// Clear
 				model.clear(function(err,ids){
-					ron.quit();
+					callback();
 				});
 			});
 		})
+	},
+	'Test get multiple ids': function(callback){
+		var model = ron.create('TestGetMultipleIds');
+		// Create 2 records
+		model.put({
+			property: 'value 1',
+		}, function(err,record){
+			model.put({
+				property: 'value 2',
+			}, function(err,record){
+				// List all ids
+				model.list(function(err,ids){
+					assert.ifError(err);
+					assert.eql(2,ids.length);
+					assert.ok(Array.isArray(ids));
+					// Test
+					model.get(ids, function(err,records){
+						assert.ifError(err);
+						assert.eql(2,records.length);
+						assert.eql('value 1',records[0].property);
+						assert.eql('value 2',records[1].property);
+						// Clear
+						model.clear(function(err,ids){
+							// Get missing ids
+							model.get(ids, function(err,records){
+								assert.ifError(err);
+								assert.eql([null,null],records);
+								// Clear
+								model.clear(function(err,ids){
+									callback();
+								});
+							});
+						});
+					});
+				})
+			})
+		})
+	},
+	'quit': function(callback){
+		ron.quit();
+		callback();
 	}
 }
