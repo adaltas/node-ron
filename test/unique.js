@@ -119,11 +119,29 @@ module.exports = {
 				});
 				multi.exec(function(err,results){
 					model.clear(function(err){
-						// ron.quit();
 						callback();
 					});
 				});
 			});
+		});
+	},
+	'Test unique query': function(callback){
+		var model = ron.create('TestUniqueQuery').unique('property');
+		model.put([{
+			property: 'value 1'
+		},{
+			property: 'value 2'
+		},{
+			property: 'value 3'
+		}],function(err,records){
+			model.get({property:['value 1','value 3']},function(err,records){
+				assert.eql(2,records.length);
+				assert.eql('value 1',records[0].property);
+				assert.eql('value 3',records[1].property);
+				model.clear(function(err){
+					callback();
+				});
+			})
 		});
 	},
 	'quit': function(callback){

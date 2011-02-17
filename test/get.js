@@ -44,6 +44,7 @@ module.exports = {
 						assert.eql(2,records.length);
 						assert.eql('value 1',records[0].property);
 						assert.eql('value 2',records[1].property);
+						assert.ok(!isNaN(parseInt(records[1].id)));
 						// Clear
 						model.clear(function(err,ids){
 							// Get missing ids
