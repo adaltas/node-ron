@@ -31,22 +31,32 @@ module.exports = {
 			});
 			multi.exec(function(err,results){
 				// Put a second time
-				model.update({
-					id: record.id,
-					unique_property: 'unique',
-					other_property: 'other updated'
-				},function(err,record){
+				callback();
+			});
+		});
+	},
+	'Test update': function(callback){
+		var model = ron.create('TestUniqueUpdate').unique('unique_property');
+		model.put({
+			unique_property: 'unique',
+			other_property: 'other'
+		},function(err,record){
+			assert.ifError(err);
+			model.update({
+				id: record.id,
+				unique_property: 'unique',
+				other_property: 'other updated'
+			},function(err,record){
+				assert.ifError(err);
+				model.length(function(err,length){
 					assert.ifError(err);
-					model.length(function(err,length){
+					assert.eql(1,length);
+					model.clear(function(err){
 						assert.ifError(err);
-						assert.eql(1,length);
-						model.clear(function(err){
-							assert.ifError(err);
-							// ron.quit();
-							callback();
-						});
-					})
-				});
+						// ron.quit();
+						callback();
+					});
+				})
 			});
 		});
 	},

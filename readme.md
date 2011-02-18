@@ -35,4 +35,7 @@ Quick exemple
 Run tests
 ---------
 
-The test suite is integrated with *expresso* and should be run synchronously since they share the same redis client. To run the tests, simply type `expresso` inside the project folder.
+The test suite is integrated with *expresso* and should be run synchronously since they share the same redis client. 
+
+To run the tests, simply start redis `redis-server ./conf/redis.conf` and type `expresso -s` inside the project folder.
+
