@@ -62,6 +62,26 @@ module.exports = {
 			})
 		})
 	},
+	'Get missing': function(callback){
+		var model = ron.create('TestGetMissing');
+		model.get('missing',function(err,record){
+			assert.eql(null,record);
+			callback();
+		});
+	},
+	'Get multiple missing': function(callback){
+		var model = ron.create('TestGetMissing');
+		model.put({
+			property: 'value 1',
+		}, function(err,record){
+			model.get(['missing 1',record.id,'missing 2'],function(err,records){
+				assert.eql(null,records[0]);
+				assert.eql(record.id,records[1].id);
+				assert.eql(null,records[2]);
+				callback();
+			});
+		});
+	},
 	'quit': function(callback){
 		ron.quit();
 		callback();
