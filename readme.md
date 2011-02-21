@@ -2,6 +2,8 @@
 Redis ORM for NodeJs
 ====================
 
+Be carefull, this project is experimental.
+
 The library provide
 -------------------
 
@@ -31,6 +33,25 @@ Quick exemple
 			})
 		})
 	})
+
+Implementation
+--------------
+
+Unique identifiers are incremented from a string:
+
+	count:{Model}
+
+Model identifiers are indexed in a set:
+
+	index:{model}
+
+Unique indexes are stored in a hash with keys as identifier:
+
+	index:{model}:{property}
+
+Object data are stored in a hash
+
+	obj:{model}:{id}
 
 Run tests
 ---------
