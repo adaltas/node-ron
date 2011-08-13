@@ -2,61 +2,78 @@
 Redis ORM for NodeJs
 ====================
 
-Be carefull, this project is experimental.
+Ad-lib, be carefull, this project is experimental.
 
 The library provide
 -------------------
 
 *	Simple & tested API
-*	Unique index keys
+*   Sortable indexes and unique values
+*   Records are pure object, no extended class, no magic properties
+*   Code, tests and readme written in coffescript, samples written in javascript
 
 Quick exemple
 -------------
 
-	var ron = require('ron');
+	Ron = require 'ron'
+	ron = Ron
+		host: ''
+		port: ''
+        name: 'auth'
 	
-	var Users = ron.create('Users')
-	// A unique property identifier, default to id
-	.identify('id_user')
-	// Create a unique index
-	.unique('username')
-	// Create an index
-	.index('lastname');
-	
-	Users.put({
-		username: 'my_username',
-		lastname: 'My Lastname'
-	}, function(err, user){
-		Users.get(user.id_user, function(err, user){
-			Users.delete(user.id_user, function(err){
-				console.log(user.id_user + ' created and then removed');
-			})
-		})
-	})
+	User = ron.create 'users'
+    User.property 'id',
+        identifier: true
+    # Use a hash index
+	User.property 'username',
+		type: 'string'
+		unique: true
+    # Use a sorted set index
+    User.property 'name',
+		type: 'string'
+		index: true
+    # Use a sorted set index
+    User.property 'email',
+		type: 'string'
+		index: true
+		unique: true
 
-Implementation
---------------
+Client API
+----------
 
-Unique identifiers are incremented from a string:
+*   Client::constructor
+*   Client::quit
 
-	count:{Model}
+Schema API
+----------
 
-Model identifiers are indexed in a set:
+*   Records::property
+*   Records::identifier
+*   Records::unique
+*   Records::index
 
-	index:{model}
+Record API
+----------
 
-Unique indexes are stored in a hash with keys as identifier:
-
-	index:{model}:{property}
-
-Object data are stored in a hash
-
-	obj:{model}:{id}
+*   Records::all
+*   Records::count
+*   Records::create
+*   Records::exists
+*   Records::get
+*   Records::id
+*   Records::list
+*   Records::remove
+*   Records::update
 
 Run tests
 ---------
 
-The test suite is integrated with *expresso* and should be run synchronously since they share the same redis client. 
+Start a redis server on the default port
+	redis-server ./conf/redis.conf
 
-To run the tests, simply start redis `redis-server ./conf/redis.conf` and type `expresso -s` inside the project folder.
+Note, the current configuration fit a 2.9.0 redis version
+
+Run the test suite with *expresso*:
+	expresso -s
+
 
