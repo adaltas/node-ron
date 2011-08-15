@@ -7,6 +7,8 @@ Ron = require '../index'
 ron = Ron config
 User = ron.create 'users'
 User.identifier 'user_id'
+User.unique 'username'
+User.index 'email'
 
 module.exports =
     'init': (exit) ->
@@ -15,8 +17,8 @@ module.exports =
             exit()
     'Test remove': (exit) ->
         User.create {
-            username: 'my_username',
-            email: 'my@email.com',
+            username: 'my_username'
+            email: 'my@email.com'
             password: 'my_password'
         }, (err, user) ->
             # Delete record bsed on identifier

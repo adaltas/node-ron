@@ -7,6 +7,8 @@ Ron = require '../index'
 ron = Ron config
 User = ron.create 'users'
 User.identifier 'user_id'
+User.unique 'username'
+User.index 'email'
 
 module.exports =
     'init': (exit) ->

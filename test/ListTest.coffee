@@ -7,6 +7,8 @@ Ron = require '../index'
 ron = Ron config
 User = ron.create 'users'
 User.identifier 'user_id'
+User.unique 'username'
+User.index 'email'
 
 module.exports =
     'init': (exit) ->
@@ -20,12 +22,12 @@ module.exports =
             exit()
     'Test list # sort': (exit) ->
         User.create [
-            username: 'my_username_1',
-            email: 'my_first@email.com',
+            username: 'my_username_1'
+            email: 'my_first@email.com'
             password: 'my_password'
         ,
-            username: 'my_username_2',
-            email: 'my_second@email.com',
+            username: 'my_username_2'
+            email: 'my_second@email.com'
             password: 'my_password'
         ], (err, users) ->
             User.list { sort: 'username', direction: 'desc' }, (err, users) ->
@@ -36,17 +38,17 @@ module.exports =
                 User.clear exit
     'Test list # where': (exit) ->
         User.create [
-            username: 'username_1',
-            email: 'first@email.com',
+            username: 'username_1'
+            email: 'first@email.com'
             password: 'my_password'
         ,
-            username: 'username_2',
-            email: 'second@email.com',
+            username: 'username_2'
+            email: 'second@email.com'
             password: 'my_password'
         
         ,
-            username: 'username_3',
-            email: 'first@email.com',
+            username: 'username_3'
+            email: 'first@email.com'
             password: 'my_password'
         ], (err, users) ->
             User.list { email: 'first@email.com', direction: 'desc' }, (err, users) ->

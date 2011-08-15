@@ -7,6 +7,8 @@ Ron = require '../index'
 ron = Ron config
 User = ron.create 'users'
 User.identifier 'user_id'
+User.unique 'username'
+User.index 'email'
 
 module.exports =
     'init': (exit) ->
@@ -14,11 +16,11 @@ module.exports =
             assert.ifError err
             exit()
     'Test create # one user': (exit) ->
-        User.create {
+        User.create
             username: 'my_username',
             email: 'my@email.com',
             password: 'my_password'
-        }, (err, user) ->
+        , (err, user) ->
             assert.ifError err
             assert.type user, 'object'
             assert.type user.user_id, 'number'
@@ -42,11 +44,11 @@ module.exports =
             # toto: Replace by User.remove
             User.clear exit
     'Test create # existing id': (exit) ->
-        User.create {
+        User.create
             username: 'my_username',
             email: 'my@email.com',
             password: 'my_password'
-        }, (err, user) ->
+        , (err, user) ->
             assert.ifError err
             User.create {
                 user_id: user.user_id,
@@ -58,17 +60,17 @@ module.exports =
                 assert.eql err.message, 'User 1 already exists'
                 User.clear exit
     'Test create # unique exists': (exit) ->
-        User.create {
+        User.create
             username: 'my_username',
             email: 'my@email.com',
             password: 'my_password'
-        }, (err, user) ->
+        , (err, user) ->
             assert.ifError err
-            User.create {
+            User.create
                 username: 'my_username',
                 email: 'my@email.com',
                 password: 'my_password'
-            }, (err, user) ->
+            , (err, user) ->
                 assert.isNotNull err
                 assert.eql err.message, 'User 1 already exists'
                 User.clear exit

@@ -7,6 +7,8 @@ Ron = require '../index'
 ron = Ron config
 User = ron.create 'users'
 User.identifier 'user_id'
+User.unique 'username'
+User.index 'email'
 
 module.exports =
     'init': (exit) ->
@@ -25,8 +27,8 @@ module.exports =
             User.clear exit
     'Test update # change unique': (exit) ->
         User.create  {
-            username: 'my_username',
-            email: 'my@email.com',
+            username: 'my_username'
+            email: 'my@email.com'
             password: 'my_password'
         }, (err, user) ->
             assert.ifError err
@@ -44,8 +46,8 @@ module.exports =
                             User.clear exit
     'Test update # change index': (exit) ->
         User.create  {
-            username: 'my_username',
-            email: 'my@email.com',
+            username: 'my_username'
+            email: 'my@email.com'
             password: 'my_password'
         }, (err, user) ->
             assert.ifError err

@@ -8,18 +8,18 @@ ron = Ron config
 User = ron.create 'users'
 User.identifier 'user_id'
 User.unique 'username'
-User.index 'password'
+User.index 'email'
 
 create = (callback) ->
-    User.create [{
+    User.create [
         username: 'my_username_1',
         email: 'my_1@email.com',
         password: 'my_password'
-    },{
+    ,
         username: 'my_username_2',
         email: 'my_2@email.com',
         password: 'my_password'
-    }], (err, users) ->
+    ], (err, users) ->
         assert.ifError err
         callback(null, users)
 

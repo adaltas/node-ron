@@ -15,13 +15,13 @@ The library provide
 Quick exemple
 -------------
 
-	Ron = require 'ron'
-	ron = Ron
+	ron = require 'ron'
+	app = ron
 		host: ''
 		port: ''
         name: 'auth'
 	
-	User = ron.create 'users'
+	User = app.create 'users'
     User.property 'id',
         identifier: true
     # Use a hash index

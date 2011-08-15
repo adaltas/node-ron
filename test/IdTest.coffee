@@ -9,7 +9,6 @@ User = ron.create 'users'
 User.identifier 'user_id'
 User.unique 'username'
 User.index 'email'
-User.unique 'email'
 
 module.exports =
     'init': (exit) ->
@@ -33,11 +32,11 @@ module.exports =
                 assert.eql userId, [3]
                 exit()
     'Test id # user.username': (exit) ->
-        User.create {
+        User.create
             username: 'my_username',
             email: 'my@email.com',
             password: 'my_password'
-        }, (err, user) ->
+        , (err, user) ->
             # Pass an object
             User.id {username: 'my_username'}, (err, userId) ->
                 assert.ifError(err)
@@ -63,7 +62,7 @@ module.exports =
         # Test an array of 3 arguments, 
         # but the second is invalid since it's an empty object
         User.create [
-            { username: 'my_username_1', email: 'my1@mail.com' },
+            { username: 'my_username_1', email: 'my1@mail.com' }
             { username: 'my_username_2', email: 'my2@mail.com' }
         ], (err, users) ->
             # Test return id
@@ -80,7 +79,7 @@ module.exports =
         # Test an array of 3 arguments, 
         # but the second is invalid since it's an empty object
         User.create [
-            { username: 'my_username_1', email: 'my1@mail.com' },
+            { username: 'my_username_1', email: 'my1@mail.com' }
             { username: 'my_username_2', email: 'my2@mail.com' }
         ], (err, users) ->
             User.id [
@@ -148,8 +147,8 @@ module.exports =
                 User.clear exit
     'Test id # id return object': (exit) ->
         User.create {
-            username: 'my_username',
-            email: 'my@email.com',
+            username: 'my_username'
+            email: 'my@email.com'
             password: 'my_password'
         }, (err, orgUser) ->
             # Pass an id
@@ -164,8 +163,8 @@ module.exports =
                     User.clear exit
     'Test id # unique + option object': (exit) ->
         User.create {
-            username: 'my_username',
-            email: 'my@email.com',
+            username: 'my_username'
+            email: 'my@email.com'
             password: 'my_password'
         }, (err, orgUser) ->
             # Pass an object

@@ -7,6 +7,8 @@ Ron = require '../index'
 ron = Ron config
 User = ron.create 'users'
 User.identifier 'user_id'
+User.unique 'username'
+User.index 'email'
 
 module.exports =
     'init': (exit) ->
@@ -14,15 +16,15 @@ module.exports =
             assert.ifError err
             exit()
     'Test count': (exit) ->
-        User.create [{
+        User.create [
             username: '1my_username',
             email: '1my@email.com',
             password: 'my_password'
-        },{
+        ,
             username: '2my_username',
             email: '2my@email.com',
             password: 'my_password'
-        }], (err, user) ->
+        ], (err, user) ->
             User.count (err, count) ->
                 assert.ifError err
                 assert.eql count, 2

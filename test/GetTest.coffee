@@ -7,6 +7,8 @@ Ron = require '../index'
 ron = Ron config
 User = ron.create 'users'
 User.identifier 'user_id'
+User.unique 'username'
+User.index 'email'
 
 module.exports =
     'init': (exit) ->
@@ -14,10 +16,10 @@ module.exports =
             assert.ifError err
             exit()
     'Test get': (exit) ->
-        User.create {
+        User.create
             username: 'my_username',
             email: 'my@email.com'
-        }, (err, user) ->
+        , (err, user) ->
             userId = user.user_id
             User.get userId, (err, user) ->
                 assert.ifError err
@@ -27,10 +29,10 @@ module.exports =
                 assert.eql user.email, 'my@email.com'
                 User.clear exit
     'Test get # unique property': (exit) ->
-        User.create {
+        User.create
             username: 'my_username',
             email: 'my@email.com'
-        }, (err, user) ->
+        , (err, user) ->
             userId = user.user_id
             User.get {username: 'my_username'}, (err, user) ->
                 assert.ifError err
@@ -43,10 +45,10 @@ module.exports =
             assert.isNull user
             User.clear exit
     'Test get # properties': (exit) ->
-        User.create {
+        User.create
             username: 'my_username',
             email: 'my@email.com',
-        }, (err, user) ->
+        , (err, user) ->
             userId = user.user_id
             User.get userId, ['username'], (err, user) ->
                 assert.ifError err
