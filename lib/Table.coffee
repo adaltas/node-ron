@@ -11,7 +11,7 @@ module.exports = class Table
     index = {}
     unique = {}
     
-    properties: {}
+    properties = {}
 
     constructor: (ron, options) ->
         redis = ron.redis
@@ -23,7 +23,7 @@ module.exports = class Table
     Define a new property.
     ###
     property: (property, options) ->
-        @properties[property] = options
+        properties[property] = options
         @indentifier property if property.identifier
     
     ###
@@ -37,8 +37,8 @@ module.exports = class Table
     identifier: (property) ->
         # Set the property
         if property?
-            @properties[property] = {} unless @properties[property]?
-            @properties[property].identifier = true
+            properties[property] = {} unless properties[property]?
+            properties[property].identifier = true
             identifier = property
         # Get the property
         else
@@ -64,8 +64,8 @@ module.exports = class Table
     index: (property) ->
         # Set the property
         if property?
-            @properties[property] = {} unless @properties[property]?
-            @properties[property].identifier = true
+            properties[property] = {} unless properties[property]?
+            properties[property].identifier = true
             index[property] = true
         # Get the property
         else
@@ -88,8 +88,8 @@ module.exports = class Table
     unique: (property) ->
         # Set the property
         if property?
-            @properties[property] = {} unless @properties[property]?
-            @properties[property].identifier = true
+            properties[property] = {} unless properties[property]?
+            properties[property].identifier = true
             unique[property] = true
         # Get the property
         else
@@ -116,11 +116,22 @@ module.exports = class Table
         cmds = []
         count = 0
         multi = redis.multi()
-        # Graph record identifiers
-        multi.sort "#{db}:#{name}_#{identifier}", 'get', "#{db}:#{name}:*->email", (err, values) ->
-            # index values
-            for value in values
-                cmds.push ['del', "#{db}:#{name}_email:#{value}"]
+        # Grab index values for later removal
+        indexSort = []
+        indexProperties = Object.keys(index)
+        if indexProperties
+            indexSort.push "#{db}:#{name}_#{identifier}"
+            for property in indexProperties
+                indexSort.push 'get'
+                indexSort.push "#{db}:#{name}:*->#{property}"
+            indexSort.push (err, values) ->
+                if values.length
+                    for i in [0 .. values.length-1] by indexProperties.length
+                        for property, j in indexProperties
+                            value = values[i + j]
+                            cmds.push ['del', "#{db}:#{name}_#{property}:#{value}"]
+            multi.sort indexSort...
+        # Grab record identifiers
         multi.smembers "#{db}:#{name}_#{identifier}", (err, recordIds) ->
             return callback err if err
             # Return count in final callback
@@ -133,14 +144,11 @@ module.exports = class Table
             # Identifier index
             cmds.push ['del', "#{db}:#{name}_#{identifier}"]
             # Unique indexes
-            cmds.push ['del', "#{db}:#{name}_username"]
+            for property of unique
+                cmds.push ['del', "#{db}:#{name}_#{property}"]
             # Index of values
-            cmds.push ['del', "#{db}:#{name}_email"]
-        # Grab index values for later removal
-        #multi.zrange "#{db}:#{name}_email", '0', '-1', (err, values) ->
-            # index values
-            #for value in values
-                #cmds.push ['del', "#{db}:#{name}_email:#{value}"]
+            for property of index
+                cmds.push ['del', "#{db}:#{name}_#{property}"]
         multi.exec (err, results) ->
             return callback err if err
             multi = redis.multi cmds
@@ -182,9 +190,13 @@ module.exports = class Table
                 for record, i in records
                     record[identifier] = recordId = recordIds[i]
                     multi.sadd "#{db}:#{name}_#{identifier}", recordId
-                    multi.sadd "#{db}:#{name}_email:#{record.email}", recordId
-                    multi.zadd "#{db}:#{name}_email", 0, record.email
-                    multi.hset "#{db}:#{name}_username", record.username, recordId if record.username
+                    for property of unique
+                        multi.hset "#{db}:#{name}_#{property}", record[property], recordId if record[property]
+                    for property of index
+                        value = record[property]
+                        if value? # or 0xC0,0x80
+                            multi.sadd "#{db}:#{name}_#{property}:#{value}", recordId
+                            #multi.zadd "#{db}:#{name}_#{property}", 0, record[property]
                     multi.hmset "#{db}:#{name}:#{recordId}", record
                 multi.exec (err, results) ->
                     return callback err if err
@@ -314,14 +326,32 @@ module.exports = class Table
         if typeof options is 'function'
             callback = options
             options = {}
-        properties = [ 'username', 'password', 'email' ]
         args = []
+        multi = redis.multi()
         # Index
-        #where = {}
-        #for property, value in options
-            #where[property] = value if index[property]
-        if options.email
-            args.push "#{db}:#{name}_email:#{options.email}"
+        options.where = {} unless options.where?
+        where = []
+        for property, value of options
+            if index[property]
+                if Array.isArray value
+                    for v in value
+                        where.push [property, v]
+                else
+                    where.push [property, value]
+        options.where = if Object.keys(options.where).length then options.where else false
+        if where.length is 1
+            [property, value] = where[0]
+            args.push "#{db}:#{name}_#{property}:#{value}"
+        else if where.length > 1
+            tempkey = "temp:#{(new Date).getTime()}#{Math.random()}"
+            keys = []
+            keys.push tempkey
+            args.push tempkey
+            for filter in where
+                [property, value] = filter
+                keys.push "#{db}:#{name}_#{property}:#{value}"
+            operation = options.operation ? 'union'
+            multi["s#{operation}store"] keys...
         else
             args.push "#{db}:#{name}_#{identifier}"
         # Sorting by one property
@@ -329,7 +359,7 @@ module.exports = class Table
             args.push 'by'
             args.push "#{db}:#{name}:*->" + options.sort
         # Properties to return
-        for property in properties
+        for property of properties
             args.push 'get'
             args.push "#{db}:#{name}:*->" + property
         # Sorting property is a string
@@ -340,14 +370,17 @@ module.exports = class Table
         args.push (err, values) ->
             return callback err if err
             return callback null, [] unless values.length
-            result = for i in [0 .. values.length - 1] by properties.length
+            keys = Object.keys properties
+            result = for i in [0 .. values.length - 1] by keys.length
                 record = {}
-                for property, j in properties
+                for property, j in keys
                     record[property] = values[i + j]
                 record
             callback null, result
         # Run command
-        redis.sort args...
+        multi.sort args...
+        multi.del tempkey if tempkey
+        multi.exec()
     
     ###
     Remove one or several records
