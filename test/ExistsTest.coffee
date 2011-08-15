@@ -7,6 +7,8 @@ Ron = require '../index'
 ron = Ron config
 User = ron.create 'users'
 User.identifier 'user_id'
+User.unique 'username'
+User.index 'password'
 
 create = (callback) ->
     User.create [{
@@ -47,13 +49,6 @@ module.exports =
                 assert.ifError err
                 assert.eql userId, user.user_id
                 User.clear exit
-    'Test exists # true # record with unique property stored in zset (todo)': (exit) ->
-        create (err, users) ->
-            user = users[1]
-            User.exists {email: user.email}, (err, userId) ->
-                assert.ifError err
-                assert.eql userId, user.user_id
-                User.clear exit
     'Test exists # false # indentifier': (exit) ->
         User.exists 'missing', (err, exists) ->
             assert.ok exists is null
@@ -65,11 +60,6 @@ module.exports =
             User.clear exit
     'Test exists # false # record with unique property stored in hash': (exit) ->
         User.exists {username: 'missing'}, (err, exists) ->
-            assert.ifError err
-            assert.ok exists is null
-            User.clear exit
-    'Test exists # false # record with unique property stored in zset (todo)': (exit) ->
-        User.exists {email: 'missing'}, (err, exists) ->
             assert.ifError err
             assert.ok exists is null
             User.clear exit

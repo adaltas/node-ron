@@ -29,14 +29,9 @@ Quick exemple
 		type: 'string'
 		unique: true
     # Use a sorted set index
-    User.property 'name',
-		type: 'string'
-		index: true
-    # Use a sorted set index
     User.property 'email',
 		type: 'string'
 		index: true
-		unique: true
 
 Client API
 ----------

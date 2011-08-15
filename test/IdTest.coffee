@@ -28,7 +28,7 @@ module.exports =
         User.id {user_id: 3}, (err, userId) ->
             assert.ifError(err)
             assert.eql userId, 3
-            User.id [{user_id: 3, email: 'my@email.com'}], (err, userId) ->
+            User.id [{user_id: 3, username: 'my_username'}], (err, userId) ->
                 assert.ifError(err)
                 assert.eql userId, [3]
                 exit()
@@ -38,25 +38,12 @@ module.exports =
             email: 'my@email.com',
             password: 'my_password'
         }, (err, user) ->
+            # Pass an object
             User.id {username: 'my_username'}, (err, userId) ->
                 assert.ifError(err)
                 assert.eql userId, user.user_id
-                User.id [1, {username: 'my_username'}, 2], (err, userId) ->
-                    assert.ifError(err)
-                    assert.eql userId, [1, user.user_id, 2]
-                    User.clear exit
-    'Test id # user.email': (exit) ->
-        User.create {
-            username: 'my_username',
-            email: 'my@email.com',
-            password: 'my_password'
-        }, (err, user) ->
-            # Pass an object
-            User.id {email: 'my@email.com'}, (err, userId) ->
-                assert.ifError(err)
-                assert.eql userId, user.user_id
                 # Pass an array of ids and objects
-                User.id [1, {email: 'my@email.com'}, 2], (err, userId) ->
+                User.id [1, {username: 'my_username'}, 2], (err, userId) ->
                     assert.ifError(err)
                     assert.eql userId, [1, user.user_id, 2]
                     User.clear exit
@@ -72,29 +59,40 @@ module.exports =
                 assert.isNotNull err
                 assert.eql err.message, 'Invalid object, got {}'
                 User.clear exit
-    'Test id # invalid object email': (exit) ->
+    'Test id # missing unique': (exit) ->
         # Test an array of 3 arguments, 
         # but the second is invalid since it's an empty object
         User.create [
             { username: 'my_username_1', email: 'my1@mail.com' },
             { username: 'my_username_2', email: 'my2@mail.com' }
         ], (err, users) ->
-            users = [
-                { username: 'my_username_1' },
-                { email: 'my2@mail.com' },
-                { username: 'my_username_3', email: 'my3@mail.com' }
-            ]
             # Test return id
-            User.id users, (err, result) ->
-                assert.eql 1, result[0]
-                assert.eql 2, result[1]
+            User.id [
+                { username: users[1].username }     # By unique
+                { user_id: users[0].user_id }       # By identifier
+                { username: 'who are you' }         # Alien
+            ], (err, result) ->
+                assert.eql users[0].user_id, result[1]
+                assert.eql users[1].user_id, result[0]
                 assert.isNull result[2]
+                User.clear exit
+    'Test id # missing unique + option object': (exit) ->
+        # Test an array of 3 arguments, 
+        # but the second is invalid since it's an empty object
+        User.create [
+            { username: 'my_username_1', email: 'my1@mail.com' },
+            { username: 'my_username_2', email: 'my2@mail.com' }
+        ], (err, users) ->
+            User.id [
+                { username: users[1].username }     # By unique
+                { user_id: users[0].user_id }       # By identifier
+                { username: 'who are you' }         # Alien
+            ], {object: true}, (err, result) ->
                 # Test return object
-                User.id users, {object: true}, (err, result) ->
-                    assert.eql 1, result[0].user_id
-                    assert.eql 2, result[1].user_id
-                    assert.isNull result[2].user_id
-                    User.clear exit
+                assert.eql users[0].user_id, result[1].user_id
+                assert.eql users[1].user_id, result[0].user_id
+                assert.eql result[2].user_id, null
+                User.clear exit
     'Test id # invalid type id': (exit) ->
         # Test an array of 3 arguments, 
         # but the second is invalid since it's a boolean
@@ -164,21 +162,21 @@ module.exports =
                     assert.ifError(err)
                     assert.eql user, [{user_id: orgUser.user_id}, {user_id: orgUser.user_id}]
                     User.clear exit
-    'Test id # return object': (exit) ->
+    'Test id # unique + option object': (exit) ->
         User.create {
             username: 'my_username',
             email: 'my@email.com',
             password: 'my_password'
         }, (err, orgUser) ->
             # Pass an object
-            User.id {email: 'my@email.com'}, {object: true}, (err, user) ->
+            User.id {username: 'my_username'}, {object: true}, (err, user) ->
                 assert.ifError(err)
                 assert.type user, 'object'
-                assert.eql user, {email: 'my@email.com', user_id: orgUser.user_id}
+                assert.eql user, {username: 'my_username', user_id: orgUser.user_id}
                 # Pass an array of ids and objects
-                User.id [1, {email: 'my@email.com'}, 2], {object: true}, (err, user) ->
+                User.id [1, {username: 'my_username'}, 2], {object: true}, (err, user) ->
                     assert.ifError(err)
-                    assert.eql user, [{user_id: 1}, {email: 'my@email.com', user_id: orgUser.user_id}, {user_id: 2}]
+                    assert.eql user, [{user_id: 1}, {username: 'my_username', user_id: orgUser.user_id}, {user_id: 2}]
                     User.clear exit
     'destroy': (exit) ->
         ron.quit exit

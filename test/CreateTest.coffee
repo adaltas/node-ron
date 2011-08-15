@@ -57,7 +57,7 @@ module.exports =
                 assert.isNotNull err
                 assert.eql err.message, 'User 1 already exists'
                 User.clear exit
-    'Test create # email exists': (exit) ->
+    'Test create # unique exists': (exit) ->
         User.create {
             username: 'my_username',
             email: 'my@email.com',
@@ -65,7 +65,7 @@ module.exports =
         }, (err, user) ->
             assert.ifError err
             User.create {
-                username: 'my_new_username',
+                username: 'my_username',
                 email: 'my@email.com',
                 password: 'my_password'
             }, (err, user) ->

@@ -19,11 +19,13 @@ module.exports =
             email: 'my@email.com',
             password: 'my_password'
         }, (err, user) ->
+            # Delete record bsed on identifier
             User.remove user.user_id, (err, count) ->
                 assert.ifError err
                 assert.eql count, 1
+                # Check record doesn't exist
                 User.exists user.user_id, (err, exists) ->
-                    assert.eql exists, false
+                    assert.eql exists, null
                     exit()
     'destroy': (exit) ->
         ron.quit exit
