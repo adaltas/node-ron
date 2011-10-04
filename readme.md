@@ -47,6 +47,7 @@ Schema API
 *   Records::identifier
 *   Records::unique
 *   Records::index
+*   Records::email
 
 Record API
 ----------

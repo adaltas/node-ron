@@ -16,10 +16,11 @@ module.exports = class Table
         @schema = 
             db: ron.name
             name: options.name
+            properties: {}
             identifier: null
             index: {}
             unique: {}
-            properties: {}
+            email: {}
         
     ###
     Define a new property.
@@ -47,7 +48,7 @@ module.exports = class Table
             @schema.identifier
     
     ###
-    Dedine a property as indexable
+    Define a property as indexable
     ------------------------------
     An indexed property allow records access by its property value. For exemple,
     when using the `list` function, the search can be filtered such as returned
@@ -74,7 +75,7 @@ module.exports = class Table
             @schema.index
     
     ###
-    Dedine a property as unique
+    Define a property as unique
     ---------------------------
     An unique property is similar to a unique one but,... unique. In addition for
     being filterable, it could also be used as an identifer to access a record.
@@ -96,6 +97,29 @@ module.exports = class Table
         # Get the property
         else
             @schema.unique
+    
+    ###
+    Define property as en email
+    ---------------------------
+    Check that a property validate as an email
+    
+    Calling this function without any argument will return all the email
+    properties.
+    
+    Exemple:
+        User.unique 'username'
+        User.get { username: 'me' }, (err, user) ->
+            console.log "This is #{user.username}"
+    ###
+    email: (property) ->
+        # Set the property
+        if property?
+            @schema.properties[property] = {} unless @schema.properties[property]?
+            @schema.properties[property].email = true
+            @schema.email[property] = true
+        # Get the property
+        else
+            @schema.email
     
     ###
     Return all records
@@ -180,11 +204,19 @@ module.exports = class Table
         records = [records] if ! isArray
         # Sanitize records
         for record in records
-            # Validation check
-            if not record.email? or typeof record.email isnt 'string' or not isEmail record.email
-                return callback new Error 'Email missing or invalid'
-            if not record.username or typeof record.username isnt 'string'
-                return callback new Error 'Username missing or invalid'
+            # Apply property definitions
+            for property, def of s.properties
+                # Validation check
+                if def.required and not record[property]?
+                    return callback new Error "Required property #{property}"
+                else if def.email and not isEmail record.email
+                    return callback new Error "Invalid email #{record.email}"
+                #if not record.email? or typeof record.email isnt 'string'
+                    #return callback new Error 'Email missing or invalid'
+                #else if not isEmail record.email
+                    #return callback new Error "Invalid email #{record.email}"
+                #if not record.username or typeof record.username isnt 'string'
+                    #return callback new Error 'Username missing or invalid'
         # Persist
         @exists records, (err, recordIds) ->
             return callback err if err
