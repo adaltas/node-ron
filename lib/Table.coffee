@@ -26,7 +26,7 @@ module.exports = class Table
     Define a new property.
     ###
     property: (property, options) ->
-        @schema.properties[property] = options
+        @schema.properties[property] = options ? {}
         @indentifier property if property.identifier
     
     ###
@@ -221,7 +221,7 @@ module.exports = class Table
         @exists records, (err, recordIds) ->
             return callback err if err
             for recordId in recordIds
-                return callback new Error "User #{recordId} already exists" if recordId?
+                return callback new Error "Record #{recordId} already exists" if recordId?
             multi = redis.multi()
             multi.incr "#{s.db}:#{s.name}_incr" for x in records
             multi.exec (err, recordIds) ->
