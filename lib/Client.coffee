@@ -27,4 +27,5 @@ module.exports = class Client
             callback null, status if callback
     
     hash: (key) ->
+        key = "#{key}" if typeof key is 'number'
         return if key? then crypto.createHash('sha1').update(key).digest('hex') else 'null'
