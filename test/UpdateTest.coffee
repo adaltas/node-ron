@@ -64,5 +64,26 @@ module.exports =
                             assert.eql users.length, 1
                             assert.eql users[0].email, 'new@email.com'
                             User.clear exit
+    'Test update # change to null': (exit) ->
+        User.create  {
+            username: 'my_username'
+            email: 'my@email.com'
+            password: 'my_password'
+        }, (err, user) ->
+            assert.ifError err
+            user.email = null
+            User.update user, (err, user) ->
+                assert.ifError err
+                assert.eql user.email, null
+                User.count (err, count) ->
+                    assert.eql count, 1
+                    #return User.clear exit
+                    User.list {email: 'my@email.com'}, (err, users) ->
+                        assert.eql users.length, 0
+                        User.list {email: null}, (err, users) ->
+                            assert.isNotNull user
+                            assert.eql users.length, 1
+                            assert.eql users[0].email, null
+                            User.clear exit
     'destroy': (exit) ->
         ron.quit exit

@@ -5,19 +5,18 @@ isEmail = (email) ->
 module.exports = class Table
 
     redis = null
-    name = null
-    db = null
     identifier = null
     index = {}
     unique = {}
-    
     properties = {}
+    _ron = null
 
     constructor: (ron, options) ->
+        _ron = ron
         redis = ron.redis
         options = {name: options} if typeof options is 'string'
-        db = ron.name
-        name = options.name
+        @db = ron.name
+        @name = options.name
         
     ###
     Define a new property.
@@ -65,7 +64,7 @@ module.exports = class Table
         # Set the property
         if property?
             properties[property] = {} unless properties[property]?
-            properties[property].identifier = true
+            properties[property].index = true
             index[property] = true
         # Get the property
         else
@@ -89,7 +88,7 @@ module.exports = class Table
         # Set the property
         if property?
             properties[property] = {} unless properties[property]?
-            properties[property].identifier = true
+            properties[property].unique = true
             unique[property] = true
         # Get the property
         else
@@ -101,6 +100,8 @@ module.exports = class Table
     Similar to the find method with far less options and a faster implementation.
     ###
     all: (callback) ->
+        db = @db
+        name = @name
         redis.smembers "#{db}:#{name}_#{identifier}", (err, recordIds) ->
             multi = redis.multi()
             for recordId in recordIds
@@ -113,6 +114,8 @@ module.exports = class Table
     Clear all the records and return the number of removed records
     ###
     clear: (callback) ->
+        db = @db
+        name = @name
         cmds = []
         count = 0
         multi = redis.multi()
@@ -124,11 +127,13 @@ module.exports = class Table
             for property in indexProperties
                 indexSort.push 'get'
                 indexSort.push "#{db}:#{name}:*->#{property}"
+                # Delete null index
+                cmds.push ['del', "#{db}:#{name}_#{property}:null"]
             indexSort.push (err, values) ->
                 if values.length
-                    for i in [0 .. values.length-1] by indexProperties.length
+                    for i in [0 ... values.length] by indexProperties.length
                         for property, j in indexProperties
-                            value = values[i + j]
+                            value = _ron.hash values[i + j]
                             cmds.push ['del', "#{db}:#{name}_#{property}:#{value}"]
             multi.sort indexSort...
         # Grab record identifiers
@@ -160,6 +165,8 @@ module.exports = class Table
     Count the number of records present in the database.
     ###
     count: (callback) ->
+        db = @db
+        name = @name
         redis.scard "#{db}:#{name}_#{identifier}", (err, count) ->
             return callback err if err
             callback null, count
@@ -168,6 +175,8 @@ module.exports = class Table
     Create a new record.
     ###
     create: (records, callback) ->
+        db = @db
+        name = @name
         isArray = Array.isArray records
         records = [records] if ! isArray
         # Sanitize records
@@ -190,14 +199,21 @@ module.exports = class Table
                 for record, i in records
                     record[identifier] = recordId = recordIds[i]
                     multi.sadd "#{db}:#{name}_#{identifier}", recordId
+                    # Deal with Unique
                     for property of unique
                         multi.hset "#{db}:#{name}_#{property}", record[property], recordId if record[property]
+                    # Deal with Index
                     for property of index
                         value = record[property]
-                        if value? # or 0xC0,0x80
-                            multi.sadd "#{db}:#{name}_#{property}:#{value}", recordId
-                            #multi.zadd "#{db}:#{name}_#{property}", 0, record[property]
-                    multi.hmset "#{db}:#{name}:#{recordId}", record
+                        value = _ron.hash value
+                        multi.sadd "#{db}:#{name}_#{property}:#{value}", recordId
+                        #multi.zadd "#{db}:#{name}_#{property}", 0, record[property]
+                    # Store the record
+                    r = {}
+                    # Filter null values
+                    for property, value of record
+                        r[property] = value if value?
+                    multi.hmset "#{db}:#{name}:#{recordId}", r
                 multi.exec (err, results) ->
                     return callback err if err
                     for result in results
@@ -212,6 +228,8 @@ module.exports = class Table
     are present if the record exists or null if it doesn't.
     ###
     exists: (records, callback) ->
+        db = @db
+        name = @name
         isArray = Array.isArray records
         records = [records] if ! isArray
         multi = redis.multi()
@@ -220,8 +238,10 @@ module.exports = class Table
                 if record[identifier]?
                     recordId = record[identifier]
                     multi.hget "#{db}:#{name}:#{recordId}", identifier
-                else if record.username?
-                    multi.hget "#{db}:#{name}_username", record.username
+                else
+                    for property of unique
+                        if record[property]?
+                            multi.hget "#{db}:#{name}_#{property}", record[property]
             else
                 multi.hget "#{db}:#{name}:#{record}", identifier
         multi.exec (err, recordIds) ->
@@ -231,8 +251,8 @@ module.exports = class Table
     ###
     Create or extract one or several ids.
     -------------------------------------
-    The method doesn't hit the database to check the existance of an id.
-    Set the provided boject to null if an id couldn't be found.
+    The method doesn't hit the database to check the existance of an id if provided.
+    Set the provided object to null if an id couldn't be found.
     
     todo: With no argument, generate an new id
     todo: IF first argument is a number, genererate the number of new id
@@ -246,6 +266,8 @@ module.exports = class Table
         if arguments.length is 2
             callback = options
             options = {}
+        db = @db
+        name = @name
         isArray = Array.isArray records
         records = [records] if not isArray
         cmds = []
@@ -262,7 +284,15 @@ module.exports = class Table
                         record[identifier] = recordId
                     )(record)]
                 else
-                    return callback new Error 'Invalid object, got ' + (JSON.stringify record)
+                    withUnique = false
+                    for property of unique
+                        if record[property]?
+                            withUnique = true
+                            cmds.push ['hget', "#{db}:#{name}_#{property}", record[property], ((record) -> (err, recordId) ->
+                                record[identifier] = recordId
+                            )(record)]
+                    # Error if no identifier and no unique value provided
+                    return callback new Error 'Invalid object, got ' + (JSON.stringify record) unless withUnique
             else if typeof record is 'number'
                 records[i] = {}
                 records[i][identifier] = record
@@ -295,6 +325,8 @@ module.exports = class Table
             options = {}
         if Array.isArray options
             options = {properties: options}
+        db = @db
+        name = @name
         isArray = Array.isArray records
         records = [records] if ! isArray
         @id records, {object: true}, (err, records) ->
@@ -326,6 +358,8 @@ module.exports = class Table
         if typeof options is 'function'
             callback = options
             options = {}
+        db = @db
+        name = @name
         args = []
         multi = redis.multi()
         # Index
@@ -341,6 +375,7 @@ module.exports = class Table
         options.where = if Object.keys(options.where).length then options.where else false
         if where.length is 1
             [property, value] = where[0]
+            value = _ron.hash value
             args.push "#{db}:#{name}_#{property}:#{value}"
         else if where.length > 1
             tempkey = "temp:#{(new Date).getTime()}#{Math.random()}"
@@ -349,6 +384,7 @@ module.exports = class Table
             args.push tempkey
             for filter in where
                 [property, value] = filter
+                value = _ron.hash value
                 keys.push "#{db}:#{name}_#{property}:#{value}"
             operation = options.operation ? 'union'
             multi["s#{operation}store"] keys...
@@ -371,7 +407,7 @@ module.exports = class Table
             return callback err if err
             return callback null, [] unless values.length
             keys = Object.keys properties
-            result = for i in [0 .. values.length - 1] by keys.length
+            result = for i in [0 ... values.length] by keys.length
                 record = {}
                 for property, j in keys
                     record[property] = values[i + j]
@@ -386,26 +422,26 @@ module.exports = class Table
     Remove one or several records
     ###
     remove: (records, callback) ->
+        db = @db
+        name = @name
         isArray = Array.isArray records
         records = [records] if ! isArray
-        records = @get records, ['email', 'username'], (err, records) ->
+        @get records, [].concat(Object.keys(unique), Object.keys(index)), (err, records) ->
             return callback err if err
             multi = redis.multi()
             for record in records
-                # delete objects
-                recordId = record[identifier]
-                multi.del "#{db}:#{name}:#{recordId}"
-                # delete indexes
-                multi.srem "#{db}:#{name}_#{identifier}", recordId
-                multi.hdel "#{db}:#{name}_username", record.username
-                multi.srem "#{db}:#{name}_email:#{record.email}", recordId, (err, count) ->
-                    console.warn('Missing indexed property') if count isnt 1
-                # If index set is empty
-                multi.exists "#{db}:#{name}_email:#{record.email}", (err, exists) ->
-                    # Remove index value from the master zset
-                    unless exists
-                        redis.zrem "#{db}:#{name}_email:#{record.email}", recordId, (err, count) ->
-                            #todo
+                do (record) ->
+                    # delete objects
+                    recordId = record[identifier]
+                    multi.del "#{db}:#{name}:#{recordId}"
+                    # delete indexes
+                    multi.srem "#{db}:#{name}_#{identifier}", recordId
+                    for property of unique
+                        multi.hdel "#{db}:#{name}_#{property}", record[property]
+                    for property of index
+                        value = _ron.hash record[property]
+                        multi.srem "#{db}:#{name}_#{property}:#{value}", recordId, (err, count) ->
+                            console.warn('Missing indexed property') if count isnt 1
             multi.exec (err, results) ->
                 return callback err if err
                 callback null, records.length
@@ -414,6 +450,8 @@ module.exports = class Table
     Update one or several records
     ###
     update: (records, callback) ->
+        db = @db
+        name = @name
         isArray = Array.isArray records
         records = [records] if ! isArray
         # 1. Get values of indexed properties
@@ -434,29 +472,37 @@ module.exports = class Table
                 # Stop here if we couldn't get an id
                 recordId = record[identifier]
                 return callback new Error 'Unsaved record' unless recordId
-                cmdsUpdate.push ['hmset', "#{db}:#{name}:#{recordId}", record ]
+                r = {}
+                # Filter null values
+                for property, value of record
+                    if value?
+                        r[property] = value 
+                    else
+                        cmdsUpdate.push ['hdel', "#{db}:#{name}:#{recordId}", property ]
+                cmdsUpdate.push ['hmset', "#{db}:#{name}:#{recordId}", r ]
                 # If an index has changed, we need to update it
                 do (record) ->
+                    recordId = record[identifier]
                     changedProperties = []
-                    for property in ['email', 'username']
-                        changedProperties.push property if record[property]
+                    for property in [].concat(Object.keys(unique), Object.keys(index))
+                        changedProperties.push property if typeof record[property] isnt 'undefined'
                     if changedProperties.length
                         multi.hmget "#{db}:#{name}:#{recordId}", changedProperties, (err, values) ->
                             for property, propertyI in changedProperties
-                                _unique = {'username': true}
-                                _index = {'email': true}
                                 if values[propertyI] isnt record[property]
-                                    if _unique[property]
+                                    if properties[property].unique
                                         # First we check if index for new key exists to avoid duplicates
                                         cmdsCheck.push ['hexists', "#{db}:#{name}users_#{property}", record[property] ]
                                         # Second, if it exists, erase old key and set new one
                                         cmdsUpdate.push ['hdel', "#{db}:#{name}_#{property}", values[propertyI] ]
-                                        cmdsUpdate.push ['hsetnx', "#{db}:#{name}_#{property}", record[property], record[identifier], (err, success) ->
+                                        cmdsUpdate.push ['hsetnx', "#{db}:#{name}_#{property}", record[property], recordId, (err, success) ->
                                             console.warn 'Trying to write on existing unique property' unless success
                                         ]
-                                    if _index[property]
-                                        cmdsUpdate.push ['srem', "#{db}:#{name}_#{property}:#{values[propertyI]}", record[identifier] ]
-                                        cmdsUpdate.push ['sadd', "#{db}:#{name}_#{property}:#{record[property]}", record[identifier] ]
+                                    else if properties[property].index
+                                        valueOld = _ron.hash values[propertyI]
+                                        valueNew = _ron.hash record[property]
+                                        cmdsUpdate.push ['srem', "#{db}:#{name}_#{property}:#{valueOld}", recordId ]
+                                        cmdsUpdate.push ['sadd', "#{db}:#{name}_#{property}:#{valueNew}", recordId ]
             # Get the value of those indexed properties to see if they changed
             multi.exec (err, values) ->
                 # Check if unique properties doesn't already exists

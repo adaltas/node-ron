@@ -38,6 +38,7 @@ Client API
 
 *   Client::constructor
 *   Client::quit
+*   Client::create
 
 Schema API
 ----------
@@ -63,10 +64,8 @@ Record API
 Run tests
 ---------
 
-Start a redis server on the default port
+Start a redis server (tested against version 2.9.0) on the default port
 	redis-server ./conf/redis.conf
-
-Note, the current configuration fit a 2.9.0 redis version
 
 Run the test suite with *expresso*:
 	expresso -s

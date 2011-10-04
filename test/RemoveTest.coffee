@@ -15,7 +15,7 @@ module.exports =
         User.clear (err) ->
             assert.ifError err
             exit()
-    'Test remove': (exit) ->
+    'Test remove # from identifier': (exit) ->
         User.create {
             username: 'my_username'
             email: 'my@email.com'
