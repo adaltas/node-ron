@@ -309,12 +309,15 @@ module.exports = class Table
             callback null, if isArray then records else records[0]
     
     ###
-    Retrieve a record
-    -----------------
-    If options is an array, it is considered to be an array of properties
+    Retrieve one or multiple records
+    --------------------------------
+    If options is an array, it is considered to be the list of properties to retrieve.
     Options are
-    -   properties, array of properties to fetch, all if null
+    -   properties, array of properties to fetch, all properties if not provided
     -   force, force the retrieval of properties even if already present in the record objects
+    callback arguments are
+    -   err, error object if the command failed
+    -   records, object or array of object if command succeed. Object are null if record was not found
     ###
     get: (records, options, callback) ->
         if arguments.length is 2
