@@ -15,19 +15,24 @@ module.exports =
         User.clear (err) ->
             assert.ifError err
             exit()
-    'Test get': (exit) ->
+    'Test get # identifier': (exit) ->
         User.create
             username: 'my_username',
             email: 'my@email.com'
         , (err, user) ->
             userId = user.user_id
+            # Test with a number
             User.get userId, (err, user) ->
                 assert.ifError err
                 assert.type user, 'object'
                 assert.eql user.user_id, userId
                 assert.eql user.username, 'my_username'
                 assert.eql user.email, 'my@email.com'
-                User.clear exit
+                # Test with a string
+                User.get '' + userId, (err, user) ->
+                    assert.ifError err
+                    assert.eql user.user_id, userId
+                    User.clear exit
     'Test get # unique property': (exit) ->
         User.create
             username: 'my_username',

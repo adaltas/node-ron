@@ -290,7 +290,7 @@ module.exports = class Table
                             )(record)]
                     # Error if no identifier and no unique value provided
                     return callback new Error 'Invalid object, got ' + (JSON.stringify record) unless withUnique
-            else if typeof record is 'number'
+            else if typeof record is 'number' or typeof record is 'string'
                 records[i] = {}
                 records[i][s.identifier] = record
             else
