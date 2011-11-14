@@ -57,7 +57,7 @@ module.exports =
                 password: 'my_password'
             }, (err, user) ->
                 assert.isNotNull err
-                assert.eql err.message, 'User 1 already exists'
+                assert.eql err.message, 'Record 1 already exists'
                 User.clear exit
     'Test create # unique exists': (exit) ->
         User.create
@@ -72,7 +72,7 @@ module.exports =
                 password: 'my_password'
             , (err, user) ->
                 assert.isNotNull err
-                assert.eql err.message, 'User 1 already exists'
+                assert.eql err.message, 'Record 1 already exists'
                 User.clear exit
     'destroy': (exit) ->
         ron.quit exit
