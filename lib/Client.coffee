@@ -15,14 +15,12 @@ module.exports = class Client
             @redis.auth options.redis_password if options.redis_password?
             @redis.select options.redis_database if options.redis_database?
 
-    create: (options) ->
+    define: (options) ->
         new Table @, options
-
-    quit: ->
-        @redis.quit()
     
     quit: (callback) ->
         @redis.quit (err, status) ->
+            return unless callback
             return callback err if err
             callback null, status if callback
     

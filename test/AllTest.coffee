@@ -5,7 +5,7 @@ config = require '../conf/test'
 Ron = require '../index'
 
 ron = Ron config
-User = ron.create 'users'
+User = ron.define 'users'
 User.identifier 'user_id'
 User.unique 'username'
 User.index 'email'
