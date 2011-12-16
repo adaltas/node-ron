@@ -2,7 +2,29 @@
 Redis ORM for NodeJs
 ====================
 
-Ad-lib, be carefull, this project is experimental.
+Installation
+------------
+
+```bash
+npm install ron
+```
+
+Usage
+-----
+
+```javascript
+ron = require('ron');
+client = ron({
+    redis_port: 6379
+    redis_host: '127.0.0.1'
+    name: 'auth'
+});
+users = client.define('users');
+users.property('id', {identifier: true});
+users.property('username', {unique: true});
+users.property('email', {index: true, email: true});
+users.property('name', {});
+```
 
 The library provide
 -------------------
@@ -10,43 +32,21 @@ The library provide
 *	Simple & tested API
 *   Sortable indexes and unique values
 *   Records are pure object, no extended class, no magic properties
-*   Code, tests and readme written in coffescript, samples written in javascript
-
-Quick exemple
--------------
-
-	ron = require 'ron'
-	app = ron
-		host: ''
-		port: ''
-        name: 'auth'
-	
-	User = app.create 'users'
-    User.property 'id',
-        identifier: true
-    # Use a hash index
-	User.property 'username',
-		type: 'string'
-		unique: true
-    # Use a sorted set index
-    User.property 'email',
-		type: 'string'
-		index: true
 
 Client API
 ----------
 
 *   Client::constructor
 *   Client::quit
-*   Client::create
+*   Client::define
 
 Schema API
 ----------
 
 *   Records::property
 *   Records::identifier
-*   Records::unique
 *   Records::index
+*   Records::unique
 *   Records::email
 
 Record API
@@ -66,9 +66,13 @@ Run tests
 ---------
 
 Start a redis server (tested against version 2.9.0) on the default port
-	redis-server ./conf/redis.conf
+```bash
+redis-server ./conf/redis.conf
+```
 
 Run the test suite with *expresso*:
-	expresso -s
+```bash
+expresso -s
+```
 
 

@@ -16,7 +16,8 @@ module.exports = class Client
             @redis.select options.redis_database if options.redis_database?
 
     define: (options) ->
-        new Table @, options
+        name = if typeof options is 'string' then options else options.name
+        @[name] = new Table @, options
     
     quit: (callback) ->
         @redis.quit (err, status) ->

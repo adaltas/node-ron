@@ -11,7 +11,6 @@ module.exports = class Table
         _ron = ron
         redis = ron.redis
         options = {name: options} if typeof options is 'string'
-        #@db = ron.name
         @name = options.name
         @schema = 
             db: ron.name
@@ -21,13 +20,38 @@ module.exports = class Table
             index: {}
             unique: {}
             email: {}
-        
+
     ###
-    Define a new property.
+    Retrieve/define a new property
+    ------------------------------
+    Define a new property or overwrite the definition of an
+    existing property. If no schema is provide, return the
+    property information.
+    
+    Calling this function with only the property argument will return the schema
+    information associated with the property.
+    
+    It is possible to define a new property without any schema information by 
+    providing an empty object.
+    
+    Example:
+        User.property 'id', identifier: true
+        User.property 'username', unique: true
+        User.property 'email', { index: true, email: true }
+        User.property 'name', {}
     ###
-    property: (property, options) ->
-        @schema.properties[property] = options ? {}
-        @indentifier property if property.identifier
+    property: (property, schema) ->
+        if schema?
+            schema ?= {}
+            schema.name = property
+            @schema.properties[property] = schema
+            @identifier property if schema.identifier
+            @index property if schema.index
+            @unique property if schema.unique
+            @email property if schema.email
+            @
+        else
+            @schema.properties[property]
     
     ###
     Define a property as an identifier
@@ -43,21 +67,22 @@ module.exports = class Table
             @schema.properties[property] = {} unless @schema.properties[property]?
             @schema.properties[property].identifier = true
             @schema.identifier = property
+            @
         # Get the property
         else
             @schema.identifier
     
     ###
-    Define a property as indexable
-    ------------------------------
-    An indexed property allow records access by its property value. For exemple,
+    Define a property as indexable or return all index properties
+    -------------------------------------------------------------
+    An indexed property allow records access by its property value. For example,
     when using the `list` function, the search can be filtered such as returned
     records match one or multiple values.
     
-    Calling this function without any argument will return all the indexed
-    properties.
+    Calling this function without any argument will return an array with all the 
+    indexed properties.
     
-    Exemple:
+    Example:
         User.index 'email'
         User.list { filter: { email: 'my@email.com' } }, (err, users) ->
             console.log 'This user has the following accounts:'
@@ -70,9 +95,10 @@ module.exports = class Table
             @schema.properties[property] = {} unless @schema.properties[property]?
             @schema.properties[property].index = true
             @schema.index[property] = true
+            @
         # Get the property
         else
-            @schema.index
+            Object.keys(@schema.index)
     
     ###
     Define a property as unique
@@ -80,10 +106,10 @@ module.exports = class Table
     An unique property is similar to a unique one but,... unique. In addition for
     being filterable, it could also be used as an identifer to access a record.
     
-    Calling this function without any argument will return all the unique
-    properties.
+    Calling this function without any argument will return an arrya with all the 
+    unique properties.
     
-    Exemple:
+    Example:
         User.unique 'username'
         User.get { username: 'me' }, (err, user) ->
             console.log "This is #{user.username}"
@@ -94,9 +120,10 @@ module.exports = class Table
             @schema.properties[property] = {} unless @schema.properties[property]?
             @schema.properties[property].unique = true
             @schema.unique[property] = true
+            @
         # Get the property
         else
-            @schema.unique
+            Object.keys(@schema.unique)
     
     ###
     Define property as en email
@@ -106,7 +133,7 @@ module.exports = class Table
     Calling this function without any argument will return all the email
     properties.
     
-    Exemple:
+    Example:
         User.unique 'username'
         User.get { username: 'me' }, (err, user) ->
             console.log "This is #{user.username}"
@@ -117,6 +144,7 @@ module.exports = class Table
             @schema.properties[property] = {} unless @schema.properties[property]?
             @schema.properties[property].email = true
             @schema.email[property] = true
+            @
         # Get the property
         else
             @schema.email
