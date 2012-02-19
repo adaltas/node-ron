@@ -1,4 +1,5 @@
 .*
+/conf/test.coffee
 /conf/dump.rdb
 /node_modules/*
 !.travis.yml

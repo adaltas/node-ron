@@ -1,7 +1,7 @@
 
 should = require 'should'
 
-config = require '../conf/test'
+try config = require '../conf/test' catch e
 Ron = require '../index'
 
 describe 'get', ->

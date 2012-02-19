@@ -12,7 +12,7 @@ module.exports = class Client
         if @options.redis
             @redis = @options.redis
         else
-            @redis = redis.createClient options.redis_port, options.redis_host
+            @redis = redis.createClient options.redis_port ? 6379, options.redis_host ? '127.0.0.1'
             @redis.auth options.redis_password if options.redis_password?
             @redis.select options.redis_database if options.redis_database?
 
