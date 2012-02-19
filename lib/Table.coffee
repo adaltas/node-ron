@@ -54,6 +54,25 @@ module.exports = class Table
             @schema.properties[property]
     
     ###
+    Cast record values to their correct type
+    ----------------------------------------
+    Traverse all the record properties and update 
+    values with correct types.
+    ###
+    type: (records) ->
+        s = @schema
+        isArray = Array.isArray records
+        records = [records] if ! isArray
+        for record, i in records
+            continue unless record?
+            if typeof record is 'object'
+                for property, value of record
+                    if s.properties[property]?.type is 'int' and value?
+                        record[property] = parseInt value, 10
+            else if typeof record is 'number' or typeof record is 'string'
+                records[i] = parseInt record
+    
+    ###
     Define a property as an identifier
     ----------------------------------
     An identifier is a property which uniquely define a record.
@@ -65,6 +84,7 @@ module.exports = class Table
         # Set the property
         if property?
             @schema.properties[property] = {} unless @schema.properties[property]?
+            @schema.properties[property].type = 'int'
             @schema.properties[property].identifier = true
             @schema.identifier = property
             @
@@ -227,6 +247,7 @@ module.exports = class Table
     Create a new record.
     ###
     create: (records, callback) ->
+        $ = @
         s = @schema
         isArray = Array.isArray records
         records = [records] if ! isArray
@@ -277,6 +298,7 @@ module.exports = class Table
                     return callback err if err
                     for result in results
                         return callback new Error 'Corrupted user database ' if result[0] is not "0"
+                    # $.type records
                     callback null, if isArray then records else records[0]
     
     ###
@@ -287,6 +309,7 @@ module.exports = class Table
     are present if the record exists or null if it doesn't.
     ###
     exists: (records, callback) ->
+        $ = @
         s = @schema
         isArray = Array.isArray records
         records = [records] if ! isArray
@@ -304,12 +327,13 @@ module.exports = class Table
                 multi.hget "#{s.db}:#{s.name}:#{record}", s.identifier
         multi.exec (err, recordIds) ->
             return callback err if err
+            $.type recordIds
             callback null, if isArray then recordIds else recordIds[0]
     
     ###
     Create or extract one or several ids.
     -------------------------------------
-    The method doesn't hit the database to check the existance of an id if provided.
+    The method doesn't hit the database to check the existance of an id if it is already provided.
     Set the provided object to null if an id couldn't be found.
     
     todo: With no argument, generate an new id
@@ -324,6 +348,7 @@ module.exports = class Table
         if arguments.length is 2
             callback = options
             options = {}
+        $ = @
         s = @schema
         isArray = Array.isArray records
         records = [records] if not isArray
@@ -360,12 +385,14 @@ module.exports = class Table
             if not options.object
                 records = for record in records
                     if record? then record[s.identifier] else record
+            #$.type records
             return callback null, if isArray then records else records[0]
         multi = redis.multi cmds
         multi.exec (err, results) ->
             if not options.object
                 records = for record in records
                     record[s.identifier]
+            $.type records
             callback null, if isArray then records else records[0]
     
     ###
@@ -385,6 +412,7 @@ module.exports = class Table
             options = {}
         if Array.isArray options
             options = {properties: options}
+        $ = @
         s = @schema
         isArray = Array.isArray records
         records = [records] if ! isArray
@@ -411,6 +439,7 @@ module.exports = class Table
             multi = redis.multi cmds
             multi.exec (err, values) ->
                 return callback err if err
+                $.type records
                 callback null, if isArray then records else records[0]
     
     list: (options, callback) ->

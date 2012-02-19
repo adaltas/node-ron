@@ -8,6 +8,7 @@ module.exports = class Client
     constructor: (options = {}) ->
         @options = options
         @name = options.name or 'ron'
+        @records = []
         if @options.redis
             @redis = @options.redis
         else
@@ -17,7 +18,10 @@ module.exports = class Client
 
     define: (options) ->
         name = if typeof options is 'string' then options else options.name
-        @[name] = new Table @, options
+        @records[name] = new Table @, options
+    
+    get: (type) ->
+        @records[type]
     
     quit: (callback) ->
         @redis.quit (err, status) ->
