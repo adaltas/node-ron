@@ -9,6 +9,7 @@ describe 'client', ->
     ron = Ron config
 
     it 'init', (next) ->
+        console.log 'ok'
         next()
 
     it 'Test hash # with string', (next) ->
