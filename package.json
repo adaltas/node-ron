@@ -14,6 +14,7 @@
         "url": "http://github.com/wdavidw/node-ron/issues"
     },
     "dependencies": {
+        "coffee-script": "latest",
         "redis": "latest"
     },
     "devDependencies": {
