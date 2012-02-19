@@ -1,3 +1,4 @@
+[![Build Status](https://secure.travis-ci.org/wdavidw/node-ron.png)](http://travis-ci.org/wdavidw/node-ron)
 
 Redis ORM for NodeJs
 ====================
