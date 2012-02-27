@@ -2,14 +2,49 @@
 isEmail = (email) ->
     /^[a-z0-9,!#\$%&'\*\+\/\=\?\^_`\{\|}~\-]+(\.[a-z0-9,!#\$%&'\*\+\/\=\?\^_`\{\|}~\-]+)*@[a-z0-9\-]+(\.[a-z0-9\-]+)*\.([a-z]{2,})$/.test(email)
 
+###
+Table
+=====
+
+Implement object based storage with indexing support.
+
+Identifier
+----------
+
+Auto generated identifiers are incremented integers. The next identifier is stored in
+a key named as `{s.db}:{s.name}_incr`.
+
+Records
+-------
+
+Records are stored as a single hash named as `{s.db}:{s.name}:{idenfitier}`. The hash
+keys map to the record properties and the hash value map to the values associated with
+each properties.
+
+Identifiers and unique indexes
+------------------------------
+
+Unique indexes are stored inside a single hash key named as 
+`{s.db}:{s.name}_{property}`. Inside the hash, the hash keys store the unique values 
+associated to the indexed property and the hash values store the record identifiers.
+
+Regular indexes
+---------------
+
+Regular index are stored inside multiple sets, named as
+`{s.db}:{s.name}_{property}:{value}`. There is one key for each indexed value and its 
+associated value is a set containing all the identifiers of the records whose property
+match the indexed value.
+
+###
 module.exports = class Table
 
-    redis = null
+    # redis = null
     _ron = null
 
     constructor: (ron, options) ->
         _ron = ron
-        redis = ron.redis
+        @redis = ron.redis
         options = {name: options} if typeof options is 'string'
         @name = options.name
         @schema = 
@@ -39,6 +74,7 @@ module.exports = class Table
         User.property 'username', unique: true
         User.property 'email', { index: true, email: true }
         User.property 'name', {}
+
     ###
     property: (property, schema) ->
         if schema?
@@ -175,19 +211,21 @@ module.exports = class Table
     Similar to the find method with far less options and a faster implementation.
     ###
     all: (callback) ->
+        {redis} = @
         s = @schema
         redis.smembers "#{s.db}:#{s.name}_#{s.identifier}", (err, recordIds) ->
             multi = redis.multi()
             for recordId in recordIds
                 multi.hgetall "#{s.db}:#{s.name}:#{recordId}"
-            multi.exec (err, users) ->
+            multi.exec (err, records) ->
                 return callback err if err
-                callback null, users
+                callback null, records
     
     ###
     Clear all the records and return the number of removed records
     ###
     clear: (callback) ->
+        {redis} = @
         s = @schema
         cmds = []
         count = 0
@@ -239,7 +277,7 @@ module.exports = class Table
     ###
     count: (callback) ->
         s = @schema
-        redis.scard "#{s.db}:#{s.name}_#{s.identifier}", (err, count) ->
+        @redis.scard "#{s.db}:#{s.name}_#{s.identifier}", (err, count) ->
             return callback err if err
             callback null, count
     
@@ -247,6 +285,7 @@ module.exports = class Table
     Create a new record.
     ###
     create: (records, callback) ->
+        {redis} = @
         $ = @
         s = @schema
         isArray = Array.isArray records
@@ -260,18 +299,13 @@ module.exports = class Table
                     return callback new Error "Required property #{property}"
                 else if def.email and not isEmail record.email
                     return callback new Error "Invalid email #{record.email}"
-                #if not record.email? or typeof record.email isnt 'string'
-                    #return callback new Error 'Email missing or invalid'
-                #else if not isEmail record.email
-                    #return callback new Error "Invalid email #{record.email}"
-                #if not record.username or typeof record.username isnt 'string'
-                    #return callback new Error 'Username missing or invalid'
         # Persist
         @exists records, (err, recordIds) ->
             return callback err if err
             for recordId in recordIds
                 return callback new Error "Record #{recordId} already exists" if recordId?
             multi = redis.multi()
+            # Generate new identifiers
             multi.incr "#{s.db}:#{s.name}_incr" for x in records
             multi.exec (err, recordIds) ->
                 return callback err if err
@@ -313,7 +347,7 @@ module.exports = class Table
         s = @schema
         isArray = Array.isArray records
         records = [records] if ! isArray
-        multi = redis.multi()
+        multi = @redis.multi()
         for record in records
             if typeof record is 'object'
                 if record[s.identifier]?
@@ -361,7 +395,7 @@ module.exports = class Table
                         return callback new Error 'Invalid object, got ' + (JSON.stringify record)
                 else if record[s.identifier]?
                     # It's perfect, no need to hit redis
-                else if record.username?
+                else if record.username? #todo
                     cmds.push ['hget', "#{s.db}:#{s.name}_username", record.username, ((record) -> (err, recordId) ->
                         record[s.identifier] = recordId
                     )(record)]
@@ -387,7 +421,7 @@ module.exports = class Table
                     if record? then record[s.identifier] else record
             #$.type records
             return callback null, if isArray then records else records[0]
-        multi = redis.multi cmds
+        multi = @redis.multi cmds
         multi.exec (err, results) ->
             if not options.object
                 records = for record in records
@@ -412,6 +446,7 @@ module.exports = class Table
             options = {}
         if Array.isArray options
             options = {properties: options}
+        {redis} = @
         $ = @
         s = @schema
         isArray = Array.isArray records
@@ -448,7 +483,7 @@ module.exports = class Table
             options = {}
         s = @schema
         args = []
-        multi = redis.multi()
+        multi = @redis.multi()
         # Index
         options.where = {} unless options.where?
         where = []
@@ -509,6 +544,7 @@ module.exports = class Table
     Remove one or several records
     ###
     remove: (records, callback) ->
+        {redis} = @
         s = @schema
         isArray = Array.isArray records
         records = [records] if ! isArray
@@ -536,7 +572,8 @@ module.exports = class Table
     Update one or several records
     ###
     update: (records, callback) ->
-        s = @schema
+        {redis, schema} = @
+        {db, name, properties, identifier, unique, index} = schema
         isArray = Array.isArray records
         records = [records] if ! isArray
         # 1. Get values of indexed properties
@@ -555,7 +592,7 @@ module.exports = class Table
             multi = redis.multi()
             for record in records
                 # Stop here if we couldn't get an id
-                recordId = record[s.identifier]
+                recordId = record[identifier]
                 return callback new Error 'Unsaved record' unless recordId
                 r = {}
                 # Filter null values
@@ -563,31 +600,33 @@ module.exports = class Table
                     if value?
                         r[property] = value 
                     else
-                        cmdsUpdate.push ['hdel', "#{s.db}:#{s.name}:#{recordId}", property ]
-                cmdsUpdate.push ['hmset', "#{s.db}:#{s.name}:#{recordId}", r ]
+                        cmdsUpdate.push ['hdel', "#{db}:#{name}:#{recordId}", property ]
+                cmdsUpdate.push ['hmset', "#{db}:#{name}:#{recordId}", r ]
                 # If an index has changed, we need to update it
                 do (record) ->
-                    recordId = record[s.identifier]
+                    recordId = record[identifier]
                     changedProperties = []
-                    for property in [].concat(Object.keys(s.unique), Object.keys(s.index))
+                    # Find the indexed properties that may have changed
+                    for property in [].concat(Object.keys(unique), Object.keys(index))
                         changedProperties.push property if typeof record[property] isnt 'undefined'
                     if changedProperties.length
-                        multi.hmget "#{s.db}:#{s.name}:#{recordId}", changedProperties, (err, values) ->
+                        # Get the persisted value for those indexed properties
+                        multi.hmget "#{db}:#{name}:#{recordId}", changedProperties, (err, values) ->
                             for property, propertyI in changedProperties
                                 if values[propertyI] isnt record[property]
-                                    if s.properties[property].unique
+                                    if properties[property].unique
                                         # First we check if index for new key exists to avoid duplicates
-                                        cmdsCheck.push ['hexists', "#{s.db}:#{s.name}users_#{property}", record[property] ]
+                                        cmdsCheck.push ['hexists', "#{db}:#{name}_#{property}", record[property] ]
                                         # Second, if it exists, erase old key and set new one
-                                        cmdsUpdate.push ['hdel', "#{s.db}:#{s.name}_#{property}", values[propertyI] ]
-                                        cmdsUpdate.push ['hsetnx', "#{s.db}:#{s.name}_#{property}", record[property], recordId, (err, success) ->
+                                        cmdsUpdate.push ['hdel', "#{db}:#{name}_#{property}", values[propertyI] ]
+                                        cmdsUpdate.push ['hsetnx', "#{db}:#{name}_#{property}", record[property], recordId, (err, success) ->
                                             console.warn 'Trying to write on existing unique property' unless success
                                         ]
-                                    else if s.properties[property].index
+                                    else if properties[property].index
                                         valueOld = _ron.hash values[propertyI]
                                         valueNew = _ron.hash record[property]
-                                        cmdsUpdate.push ['srem', "#{s.db}:#{s.name}_#{property}:#{valueOld}", recordId ]
-                                        cmdsUpdate.push ['sadd', "#{s.db}:#{s.name}_#{property}:#{valueNew}", recordId ]
+                                        cmdsUpdate.push ['srem', "#{db}:#{name}_#{property}:#{valueOld}", recordId ]
+                                        cmdsUpdate.push ['sadd', "#{db}:#{name}_#{property}:#{valueNew}", recordId ]
             # Get the value of those indexed properties to see if they changed
             multi.exec (err, values) ->
                 # Check if unique properties doesn't already exists
