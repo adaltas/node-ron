@@ -3,8 +3,8 @@ isEmail = (email) ->
     /^[a-z0-9,!#\$%&'\*\+\/\=\?\^_`\{\|}~\-]+(\.[a-z0-9,!#\$%&'\*\+\/\=\?\^_`\{\|}~\-]+)*@[a-z0-9\-]+(\.[a-z0-9\-]+)*\.([a-z]{2,})$/.test(email)
 
 ###
-Table
-=====
+Records
+=======
 
 Implement object based storage with indexing support.
 
@@ -37,7 +37,7 @@ associated value is a set containing all the identifiers of the records whose pr
 match the indexed value.
 
 ###
-module.exports = class Table
+module.exports = class Records
 
     # redis = null
     _ron = null

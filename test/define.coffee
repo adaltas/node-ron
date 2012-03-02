@@ -9,7 +9,7 @@ describe 'define', ->
     it 'Define # new schema # string', (next) ->
         client = ron config
         user = client.define 'user'
-        user.should.be.instanceof ron.Table
+        user.should.be.instanceof ron.Records
         user.should.eql client.get 'user'
         client.quit next
 
@@ -17,7 +17,7 @@ describe 'define', ->
         client = ron config
         user = client.define name: 'user'
         user.should.eql client.get 'user'
-        user.should.be.instanceof ron.Table
+        user.should.be.instanceof ron.Records
         client.quit next
 
     it 'Define # identifier', (next) ->

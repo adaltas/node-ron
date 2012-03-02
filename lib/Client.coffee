@@ -1,7 +1,7 @@
 
 crypto = require('crypto')
 redis = require('redis')
-Table = require('./Table')
+Records = require('./Records')
 
 module.exports = class Client
 
@@ -18,7 +18,7 @@ module.exports = class Client
 
     define: (options) ->
         name = if typeof options is 'string' then options else options.name
-        @records[name] = new Table @, options
+        @records[name] = new Records @, options
     
     get: (type) ->
         @records[type]
