@@ -1,14 +1,15 @@
 
-crypto = require('crypto')
-redis = require('redis')
-Records = require('./Records')
+redis = require 'redis'
+Schema = require './Schema'
+Records = require './Records'
 
 module.exports = class Client
 
     constructor: (options = {}) ->
         @options = options
         @name = options.name or 'ron'
-        @records = []
+        @schemas = {}
+        @records = {}
         if @options.redis
             @redis = @options.redis
         else
@@ -16,19 +17,17 @@ module.exports = class Client
             @redis.auth options.redis_password if options.redis_password?
             @redis.select options.redis_database if options.redis_database?
 
-    define: (options) ->
+    schema: (options) ->
         name = if typeof options is 'string' then options else options.name
-        @records[name] = new Records @, options
+        @schemas[name] = new Schema @, options
+        @records[name] = new Records @, @schemas[name]
+        @schemas[name]
     
-    get: (type) ->
-        @records[type]
+    get: (name) ->
+        @records[name]
     
     quit: (callback) ->
         @redis.quit (err, status) ->
             return unless callback
             return callback err if err
             callback null, status if callback
-    
-    hash: (key) ->
-        key = "#{key}" if typeof key is 'number'
-        return if key? then crypto.createHash('sha1').update(key).digest('hex') else 'null'

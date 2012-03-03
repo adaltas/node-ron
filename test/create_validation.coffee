@@ -6,28 +6,31 @@ Ron = require '../index'
 
 describe 'create_validation', ->
 
-    ron = User = null
+    ron = Users = null
     
     before (next) ->
         ron = Ron config
-        User = ron.define 'users'
-        User.identifier 'user_id'
-        User.unique 'username'
-        User.index 'email'
-        User.email 'email'
+        ron = Ron config
+        ron.schema
+            name: 'users'
+            properties: 
+                user_id: identifier: true
+                username: unique: true
+                email: {index: true, email: true}
+        Users = ron.get 'users'
         next()
 
     beforeEach (next) ->
-        User.clear next
+        Users.clear next
     
     after (next) ->
         ron.quit next
 
     it 'Test create validate # email with record', (next) ->
-        User.create
+        Users.create
             username: 'my_username',
             email: 'invalid_email.com',
             password: 'my_password'
         , (err, user) ->
             err.message.should.eql 'Invalid email invalid_email.com'
-            User.clear next
+            Users.clear next

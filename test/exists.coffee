@@ -7,7 +7,7 @@ Ron = require '../index'
 describe 'exists', ->
 
     create = (callback) ->
-        User.create [
+        Users.create [
             username: 'my_username_1',
             email: 'my_1@email.com',
             password: 'my_password'
@@ -19,18 +19,21 @@ describe 'exists', ->
             should.ifError err
             callback(null, users)
 
-    ron = User = null
+    ron = Users = null
 
     before (next) ->
         ron = Ron config
-        User = ron.define 'users'
-        User.identifier 'user_id'
-        User.unique 'username'
-        User.index 'email'
+        ron.schema
+            name: 'users'
+            properties: 
+                user_id: identifier: true
+                username: unique: true
+                email: index: true
+        Users = ron.get 'users'
         next()
 
     beforeEach (next) ->
-        User.clear next
+        Users.clear next
     
     after (next) ->
         ron.quit next
@@ -38,43 +41,43 @@ describe 'exists', ->
     it 'Test exists # true # identifier', (next) ->
         create (err, users) ->
             user = users[1]
-            User.exists user.user_id, (err, userId) ->
+            Users.exists user.user_id, (err, userId) ->
                 should.not.exist err
                 userId.should.eql user.user_id
-                User.clear next
+                Users.clear next
 
     it 'Test exists # true # record with identifier', (next) ->
         create (err, users) ->
             user = users[1]
-            User.exists {user_id: user.user_id}, (err, userId) ->
+            Users.exists {user_id: user.user_id}, (err, userId) ->
                 should.not.exist err
                 userId.should.eql user.user_id
-                User.clear next
+                Users.clear next
 
     it 'Test exists # true # record with unique property stored in hash', (next) ->
         create (err, users) ->
             user = users[1]
-            User.exists {username: user.username}, (err, userId) ->
+            Users.exists {username: user.username}, (err, userId) ->
                 should.not.exist err
                 userId.should.eql user.user_id
-                User.clear next
+                Users.clear next
 
     it 'Test exists # false # indentifier', (next) ->
-        User.exists 'missing', (err, exists) ->
+        Users.exists 'missing', (err, exists) ->
             should.not.exist err
             should.not.exist exists
-            User.clear next
+            Users.clear next
 
     it 'Test exists # false # record with identifier', (next) ->
-        User.exists {user_id: 'missing'}, (err, exists) ->
+        Users.exists {user_id: 'missing'}, (err, exists) ->
             should.not.exist err
             should.not.exist exists
-            User.clear next
+            Users.clear next
 
     it 'Test exists # false # record with unique property stored in hash', (next) ->
-        User.exists {username: 'missing'}, (err, exists) ->
+        Users.exists {username: 'missing'}, (err, exists) ->
             should.not.exist err
             should.not.exist exists
-            User.clear next
+            Users.clear next
 
 

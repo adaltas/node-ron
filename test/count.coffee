@@ -6,24 +6,25 @@ Ron = require '../index'
 
 describe 'count', ->
 
-    ron = User = null
+    ron = Users = null
     
     before (next) ->
         ron = Ron config
-        User = ron.define 'users'
-        User.identifier 'user_id'
-        User.unique 'username'
-        User.index 'email'
+        schema = ron.schema 'users'
+        schema.identifier 'user_id'
+        schema.unique 'username'
+        schema.index 'email'
+        Users = ron.get 'users'
         next()
 
     beforeEach (next) ->
-        User.clear next
+        Users.clear next
     
     after (next) ->
         ron.quit next
 
     it 'Test count', (next) ->
-        User.create [
+        Users.create [
             username: '1my_username',
             email: '1my@email.com',
             password: 'my_password'
@@ -32,7 +33,7 @@ describe 'count', ->
             email: '2my@email.com',
             password: 'my_password'
         ], (err, user) ->
-            User.count (err, count) ->
+            Users.count (err, count) ->
                 should.not.exist err
                 count.should.eql 2
                 next()

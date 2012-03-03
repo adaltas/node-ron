@@ -6,24 +6,27 @@ Ron = require '../index'
 
 describe 'create', ->
 
-    ron = User = null
+    ron = Users = null
     
     before (next) ->
         ron = Ron config
-        User = ron.define 'users'
-        User.identifier 'user_id'
-        User.unique 'username'
-        User.index 'email'
+        ron.schema
+            name: 'users'
+            properties: 
+                user_id: identifier: true
+                username: unique: true
+                email: index: true
+        Users = ron.get 'users'
         next()
 
     beforeEach (next) ->
-        User.clear next
+        Users.clear next
     
     after (next) ->
         ron.quit next
 
     it 'Test create # one user', (next) ->
-        User.create
+        Users.create
             username: 'my_username',
             email: 'my@email.com',
             password: 'my_password'
@@ -32,10 +35,10 @@ describe 'create', ->
             user.user_id.should.be.a 'number'
             user.email.should.eql 'my@email.com'
             # toto: Replace by User.remove
-            User.clear next
+            Users.clear next
 
     it 'Test create # multiple users', (next) ->
-        User.create [
+        Users.create [
             username: 'my_username_1',
             email: 'my_first@email.com',
             password: 'my_password'
@@ -47,39 +50,39 @@ describe 'create', ->
             should.not.exist err
             users.length.should.eql 2
             users[0].password.should.eql 'my_password'
-            # toto: Replace by User.remove
-            User.clear next
+            # toto: Replace by Users.remove
+            Users.clear next
 
     it 'Test create # existing id', (next) ->
-        User.create
+        Users.create
             username: 'my_username',
             email: 'my@email.com',
             password: 'my_password'
         , (err, user) ->
             should.not.exist err
-            User.create {
+            Users.create {
                 user_id: user.user_id,
                 username: 'my_new_username',
                 email: 'my_new@email.com',
                 password: 'my_password'
             }, (err, user) ->
                 err.message.should.eql 'Record 1 already exists'
-                User.clear next
+                Users.clear next
 
     it 'Test create # unique exists', (next) ->
-        User.create
+        Users.create
             username: 'my_username',
             email: 'my@email.com',
             password: 'my_password'
         , (err, user) ->
             should.not.exist err
-            User.create
+            Users.create
                 username: 'my_username',
                 email: 'my@email.com',
                 password: 'my_password'
             , (err, user) ->
                 err.message.should.eql 'Record 1 already exists'
-                User.clear next
+                Users.clear next
 
 
 

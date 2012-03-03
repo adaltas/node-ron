@@ -6,85 +6,81 @@ Ron = require '../index'
 
 describe 'list', ->
 
-    ron = User = null
+    ron = Users = null
     
     before (next) ->
         ron = Ron config
-        User = ron.define 'users'
-        User.identifier 'user_id'
-        User.unique 'username'
-        User.index 'email'
-        User.index 'name'
+        ron.schema
+            name: 'users'
+            properties: 
+                user_id: identifier: true
+                username: unique: true
+                email: index: true
+                name: index: true
+        Users = ron.get 'users'
         next()
 
     beforeEach (next) ->
-        User.clear next
+        Users.clear next
     
     after (next) ->
         ron.quit next
 
-    ron = Ron config
-    User = ron.define 'users'
-    User.identifier 'user_id'
-    User.unique 'username'
-    User.index 'email'
-    User.index 'name'
-
     it 'Test list # result empty', (next) ->
-        User.list { }, (err, users) ->
+        Users.list { }, (err, users) ->
             should.not.exist err
             users.length.should.eql 0
             next()
 
     it 'Test list # sort', (next) ->
-        User.create [
+        Users.create [
             { username: 'username_1', email: '1@email.com', password: 'my_password' }
             { username: 'username_2', email: '2@email.com', password: 'my_password' }
         ], (err, users) ->
-            User.list { sort: 'username', direction: 'desc' }, (err, users) ->
+            Users.list { sort: 'username', direction: 'desc' }, (err, users) ->
                 should.not.exist err
                 users.length.should.eql 2
                 users[0].username.should.eql 'username_2'
                 users[1].username.should.eql 'username_1'
-                User.clear next
+                Users.clear next
 
     it 'Test list # where', (next) ->
-        User.create [
+        Users.create [
             { username: 'username_1', email: '1@email.com', password: 'my_password' }
             { username: 'username_2', email: '2@email.com', password: 'my_password' }
             { username: 'username_3', email: '1@email.com', password: 'my_password' }
         ], (err, users) ->
-            User.list { email: '1@email.com', direction: 'desc' }, (err, users) ->
+            Users.list { email: '1@email.com', direction: 'desc' }, (err, users) ->
                 should.not.exist err
                 users.length.should.eql 2
                 users[0].username.should.eql 'username_3'
                 users[1].username.should.eql 'username_1'
-                User.clear next
+                Users.clear next
 
     it 'Test list # where union, same property', (next) ->
-        User.create [
+        Users.create [
             { username: 'username_1', email: '1@email.com', password: 'my_password' }
             { username: 'username_2', email: '2@email.com', password: 'my_password' }
             { username: 'username_3', email: '1@email.com', password: 'my_password' }
             { username: 'username_4', email: '4@email.com', password: 'my_password' }
         ], (err, users) ->
-            User.list { email: ['1@email.com', '4@email.com'], operation: 'union', direction: 'desc' }, (err, users) ->
+            Users.list { email: ['1@email.com', '4@email.com'], operation: 'union', direction: 'desc' }, (err, users) ->
                 should.not.exist err
                 users.length.should.eql 3
                 users[0].username.should.eql 'username_4'
                 users[1].username.should.eql 'username_3'
                 users[2].username.should.eql 'username_1'
-                User.clear next
+                Users.clear next
 
     it 'Test list # where inter, same property', (next) ->
-        User.create [
+        Users.create [
             { username: 'username_1', email: '1@email.com', password: 'my_password', name: 'name_1' }
             { username: 'username_2', email: '2@email.com', password: 'my_password', name: 'name_2' }
             { username: 'username_3', email: '1@email.com', password: 'my_password', name: 'name_3' }
             { username: 'username_4', email: '4@email.com', password: 'my_password', name: 'name_4' }
         ], (err, users) ->
-            User.list { email: '1@email.com', name: 'name_3', operation: 'inter', direction: 'desc' }, (err, users) ->
+            Users.list { email: '1@email.com', name: 'name_3', operation: 'inter', direction: 'desc' }, (err, users) ->
                 should.not.exist err
                 users.length.should.eql 1
                 users[0].username.should.eql 'username_3'
-                User.clear next
+                Users.clear next
