@@ -2,15 +2,15 @@
 should = require 'should'
 
 try config = require '../conf/test' catch e
-Ron = require '../index'
+ron = require '../index'
 
 describe 'create_validation', ->
 
-    ron = Users = null
+    client = Users = null
     
     before (next) ->
-        ron = Ron config
-        Users = ron.get
+        client = ron config
+        Users = client.get
             name: 'users'
             properties: 
                 user_id: identifier: true
@@ -22,7 +22,7 @@ describe 'create_validation', ->
         Users.clear next
     
     after (next) ->
-        ron.quit next
+        client.quit next
 
     it 'Test create validate # email with record', (next) ->
         Users.create

@@ -3,8 +3,38 @@ redis = require 'redis'
 Schema = require './Schema'
 Records = require './Records'
 
+###
+Ron client
+==========
+The client wraps a redis connection and provides access to records definition 
+and manipulation.
+
+Internall, Ron rely on the [Redis client for Node.js](https://github.com/mranney/node_redis).
+
+###
 module.exports = class Client
 
+    ###
+
+    `ron([options])` Client creation
+    --------------------------------
+    
+    `options`               Options properties include:   
+
+    *   `name`              A namespace for the application, all keys with be prefixed with "#{name}:". Default to "ron"   
+    *   `redis`             Provide an existing instance in case you don't want a new one to be created.   
+    *   `redis_host`        Redis database hostname.   
+    *   `redis_port`        Redis database port.   
+    *   `redis_password`    Redis databse password.   
+    *   `redis_database`    Integer defining the redis database.   
+
+    Basic example:
+        ron = require 'ron'
+        client = ron
+            redis_host: '127.0.0.1'
+            redis_port: 6379
+
+    ###
     constructor: (options = {}) ->
         @options = options
         @name = options.name or 'ron'
@@ -16,19 +46,47 @@ module.exports = class Client
             @redis = redis.createClient options.redis_port ? 6379, options.redis_host ? '127.0.0.1'
             @redis.auth options.redis_password if options.redis_password?
             @redis.select options.redis_database if options.redis_database?
+    ###
 
-    # schema: (options) ->
-    #     name = if typeof options is 'string' then options else options.name
-    #     @schemas[name] = new Schema @, options
-    #     @records[name] = new Records @, @schemas[name]
-    #     @schemas[name]
+    `get(schema)` Records definition and access
+    -------------------------------------------
+    Return a records instance. If the `schema` argument is an object, a new 
+    instance will be created overwriting any previously defined instance 
+    with the same name.
+
+    `schema`           An object defining a new schema or a string referencing a schema name.
     
-    get: (options) ->
-        # @records[name]
-        name = if typeof options is 'string' then options else options.name
-        @records[name] = new Records @, options if typeof options isnt 'string' or not @records[name]?
+    Define a record from a object:
+        client.get
+            name: 'users'
+            properties:
+                user_id: identifier: true
+                username: unique: true
+                email: index: true
+    
+    Define a record from function calls:
+        Users = client.get 'users'
+        Users.identifier 'user_id'
+        Users.unique 'username'
+        Users.index 'email'
+
+    ###
+    get: (schema) ->
+        name = if typeof schema is 'string' then schema else schema.name
+        @records[name] = new Records @, schema if typeof schema isnt 'string' or not @records[name]?
         @records[name]
-    
+    ###
+
+    `quit(callback)` Quit
+    ---------------------
+    Destroy the redis connection.
+
+    `callback`              Received parameters are:   
+
+    *   `err`               Error object if any.   
+    *   `status`            Status provided by the redis driver 
+
+    ###
     quit: (callback) ->
         @redis.quit (err, status) ->
             return unless callback

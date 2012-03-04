@@ -2,7 +2,7 @@
 should = require 'should'
 
 try config = require '../conf/test' catch e
-Ron = require '../index'
+ron = require '../index'
 
 describe 'exists', ->
 
@@ -19,11 +19,11 @@ describe 'exists', ->
             should.ifError err
             callback(null, users)
 
-    ron = Users = null
+    client = Users = null
 
     before (next) ->
-        ron = Ron config
-        Users = ron.get
+        client = ron config
+        Users = client.get
             name: 'users'
             properties: 
                 user_id: identifier: true
@@ -35,7 +35,7 @@ describe 'exists', ->
         Users.clear next
     
     after (next) ->
-        ron.quit next
+        client.quit next
 
     it 'Test exists # true # identifier', (next) ->
         create (err, users) ->

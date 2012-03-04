@@ -2,15 +2,15 @@
 should = require 'should'
 
 try config = require '../conf/test' catch e
-Ron = require '../index'
+ron = require '../index'
 
 describe 'update', ->
 
-    ron = Users = null
+    client = Users = null
     
     before (next) ->
-        ron = Ron config
-        Users = ron.get 'users'
+        client = ron config
+        Users = client.get 'users'
         Users.identifier 'user_id'
         Users.unique 'username'
         Users.index 'email'
@@ -20,7 +20,7 @@ describe 'update', ->
         Users.clear next
     
     after (next) ->
-        ron.quit next
+        client.quit next
 
     describe 'identifier', ->
 

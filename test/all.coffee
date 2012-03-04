@@ -2,15 +2,15 @@
 should = require 'should'
 
 try config = require '../conf/test' catch e
-Ron = require '../index'
+ron = require '../index'
 
 describe 'all', ->
 
-    ron = Users = null
+    client = Users = null
     
     before (next) ->
-        ron = Ron config
-        Users = ron.get
+        client = ron config
+        Users = client.get
             name: 'users'
             properties: 
                 user_id: identifier: true
@@ -22,7 +22,7 @@ describe 'all', ->
         Users.clear next
     
     after (next) ->
-        ron.quit next
+        client.quit next
 
     it 'shall create 2 users and list them', (next) ->
         Users.create [
