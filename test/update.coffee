@@ -10,11 +10,10 @@ describe 'update', ->
     
     before (next) ->
         ron = Ron config
-        schema = ron.schema 'users'
-        schema.identifier 'user_id'
-        schema.unique 'username'
-        schema.index 'email'
         Users = ron.get 'users'
+        Users.identifier 'user_id'
+        Users.unique 'username'
+        Users.index 'email'
         next()
 
     beforeEach (next) ->

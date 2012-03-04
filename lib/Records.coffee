@@ -1,4 +1,6 @@
 
+Schema = require './Schema'
+
 isEmail = (email) ->
     /^[a-z0-9,!#\$%&'\*\+\/\=\?\^_`\{\|}~\-]+(\.[a-z0-9,!#\$%&'\*\+\/\=\?\^_`\{\|}~\-]+)*@[a-z0-9\-]+(\.[a-z0-9\-]+)*\.([a-z]{2,})$/.test(email)
 
@@ -37,11 +39,11 @@ associated value is a set containing all the identifiers of the records whose pr
 match the indexed value.
 
 ###
-module.exports = class Records
+module.exports = class Records extends Schema
 
     constructor: (ron, schema) ->
         @redis = ron.redis
-        @schema = schema
+        super ron, schema
     
     ###
     Return all records
@@ -49,8 +51,8 @@ module.exports = class Records
     Similar to the find method with far less options and a faster implementation.
     ###
     all: (callback) ->
-        {redis, schema} = @
-        {db, name, identifier} = schema.data
+        {redis} = @
+        {db, name, identifier} = @data
         redis.smembers "#{db}:#{name}_#{identifier}", (err, recordIds) ->
             multi = redis.multi()
             for recordId in recordIds
@@ -66,9 +68,8 @@ module.exports = class Records
     success, the number of removed records is provided in the callback.
     ###
     clear: (callback) ->
-        {redis, schema} = @
-        {hash} = schema
-        {db, name, identifier, index, unique} = schema.data
+        {redis, hash} = @
+        {db, name, identifier, index, unique} = @data
         cmds = []
         count = 0
         multi = redis.multi()
@@ -118,8 +119,8 @@ module.exports = class Records
     Count the number of records present in the database.
     ###
     count: (callback) ->
-        {redis, schema} = @
-        {db, name, identifier} = schema.data
+        {redis} = @
+        {db, name, identifier} = @data
         @redis.scard "#{db}:#{name}_#{identifier}", (err, count) ->
             return callback err if err
             callback null, count
@@ -128,9 +129,8 @@ module.exports = class Records
     Create a new record.
     ###
     create: (records, callback) ->
-        {redis, schema} = @
-        {hash} = schema
-        {db, name, properties, identifier, index, unique} = schema.data
+        {redis, hash} = @
+        {db, name, properties, identifier, index, unique} = @data
         isArray = Array.isArray records
         records = [records] if ! isArray
         # Sanitize records
@@ -175,7 +175,7 @@ module.exports = class Records
                     return callback err if err
                     for result in results
                         return callback new Error 'Corrupted user database ' if result[0] is not "0"
-                    # $.type records
+                    # @type records
                     callback null, if isArray then records else records[0]
     
     ###
@@ -186,8 +186,9 @@ module.exports = class Records
     are present if the record exists or null if it doesn't.
     ###
     exists: (records, callback) ->
-        {redis, schema} = @
-        {db, name, identifier, unique} = schema.data
+        {redis} = @
+        $ = @
+        {db, name, identifier, unique} = @data
         isArray = Array.isArray records
         records = [records] if ! isArray
         multi = redis.multi()
@@ -202,9 +203,9 @@ module.exports = class Records
                             multi.hget "#{db}:#{name}_#{property}", record[property]
             else
                 multi.hget "#{db}:#{name}:#{record}", identifier
-        multi.exec (err, recordIds) ->
+        multi.exec (err, recordIds) =>
             return callback err if err
-            schema.type recordIds
+            @type recordIds
             callback null, if isArray then recordIds else recordIds[0]
     
     ###
@@ -225,10 +226,10 @@ module.exports = class Records
         if arguments.length is 2
             callback = options
             options = {}
-        {redis, schema} = @
-        {db, name, identifier, unique} = schema.data
+        {redis} = @
+        {db, name, identifier, unique} = @data
         isArray = Array.isArray records
-        records = [records] if not isArray
+        records = [records] unless isArray
         cmds = []
         err = null
         for record, i in records
@@ -262,14 +263,14 @@ module.exports = class Records
             if not options.object
                 records = for record in records
                     if record? then record[identifier] else record
-            #$.type records
             return callback null, if isArray then records else records[0]
+        # Run the commands
         multi = redis.multi cmds
-        multi.exec (err, results) ->
+        multi.exec (err, results) =>
             if not options.object
                 records = for record in records
                     record[identifier]
-            schema.type records
+            @type records
             callback null, if isArray then records else records[0]
     
     ###
@@ -289,11 +290,11 @@ module.exports = class Records
             options = {}
         if Array.isArray options
             options = {properties: options}
-        {redis, schema} = @
-        {db, name, identifier} = schema.data
+        {redis} = @
+        {db, name, identifier} = @data
         isArray = Array.isArray records
         records = [records] if ! isArray
-        @id records, {object: true}, (err, records) ->
+        @id records, {object: true}, (err, records) =>
             cmds = []
             records.forEach (record, i) ->
                 if record[identifier] is null
@@ -314,18 +315,17 @@ module.exports = class Records
             if cmds.length is 0
                 return callback null, if isArray then records else records[0]
             multi = redis.multi cmds
-            multi.exec (err, values) ->
+            multi.exec (err, values) =>
                 return callback err if err
-                schema.type records
+                @type records
                 callback null, if isArray then records else records[0]
     
     list: (options, callback) ->
         if typeof options is 'function'
             callback = options
             options = {}
-        {redis, schema} = @
-        {hash} = schema
-        {db, name, properties, identifier, index} = schema.data
+        {redis, hash} = @
+        {db, name, properties, identifier, index} = @data
         args = []
         multi = @redis.multi()
         # Index
@@ -392,9 +392,8 @@ module.exports = class Records
     
     ###
     remove: (records, callback) ->
-        {redis, schema} = @
-        {hash} = schema
-        {db, name, identifier, index, unique} = schema.data
+        {redis, hash} = @
+        {db, name, identifier, index, unique} = @data
         isArray = Array.isArray records
         records = [records] unless isArray
         @get records, [].concat(Object.keys(unique), Object.keys(index)), (err, records) ->
@@ -421,9 +420,8 @@ module.exports = class Records
     Update one or several records
     ###
     update: (records, callback) ->
-        {redis, schema} = @
-        {hash} = schema
-        {db, name, properties, identifier, unique, index} = schema.data
+        {redis, hash} = @
+        {db, name, properties, identifier, unique, index} = @data
         isArray = Array.isArray records
         records = [records] unless isArray
         # 1. Get values of indexed properties

@@ -10,14 +10,13 @@ describe 'list', ->
     
     before (next) ->
         ron = Ron config
-        ron.schema
+        Users = ron.get
             name: 'users'
             properties: 
                 user_id: identifier: true
                 username: unique: true
                 email: index: true
                 name: index: true
-        Users = ron.get 'users'
         next()
 
     beforeEach (next) ->

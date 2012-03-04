@@ -17,13 +17,16 @@ module.exports = class Client
             @redis.auth options.redis_password if options.redis_password?
             @redis.select options.redis_database if options.redis_database?
 
-    schema: (options) ->
-        name = if typeof options is 'string' then options else options.name
-        @schemas[name] = new Schema @, options
-        @records[name] = new Records @, @schemas[name]
-        @schemas[name]
+    # schema: (options) ->
+    #     name = if typeof options is 'string' then options else options.name
+    #     @schemas[name] = new Schema @, options
+    #     @records[name] = new Records @, @schemas[name]
+    #     @schemas[name]
     
-    get: (name) ->
+    get: (options) ->
+        # @records[name]
+        name = if typeof options is 'string' then options else options.name
+        @records[name] = new Records @, options if typeof options isnt 'string' or not @records[name]?
         @records[name]
     
     quit: (callback) ->

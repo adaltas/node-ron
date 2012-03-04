@@ -19,9 +19,9 @@ describe 'client', ->
         next()
 
     it 'should hash a string', (next) ->
-        ron.schema('users').hash('1').should.eql '356a192b7913b04c54574d18c28d46e6395428ab'
+        ron.get('users').hash('1').should.eql '356a192b7913b04c54574d18c28d46e6395428ab'
         next()
 
     it 'should hash a number', (next) ->
-        ron.schema('users').hash(1).should.eql '356a192b7913b04c54574d18c28d46e6395428ab'
+        ron.get('users').hash(1).should.eql '356a192b7913b04c54574d18c28d46e6395428ab'
         next()
