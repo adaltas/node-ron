@@ -54,12 +54,13 @@ module.exports = class Records extends Schema
     all: (callback) ->
         {redis} = @
         {db, name, identifier} = @data
-        redis.smembers "#{db}:#{name}_#{identifier}", (err, recordIds) ->
+        redis.smembers "#{db}:#{name}_#{identifier}", (err, recordIds) =>
             multi = redis.multi()
             for recordId in recordIds
                 multi.hgetall "#{db}:#{name}:#{recordId}"
-            multi.exec (err, records) ->
+            multi.exec (err, records) =>
                 return callback err if err
+                @unserialize records
                 callback null, records
     
     ###
@@ -165,7 +166,7 @@ module.exports = class Records extends Schema
         {redis, hash} = @
         {db, name, properties, identifier, index, unique} = @data
         isArray = Array.isArray records
-        records = [records] if ! isArray
+        records = [records] unless isArray
         # Sanitize records
         for record in records
             # Apply property definitions
@@ -176,14 +177,14 @@ module.exports = class Records extends Schema
                 else if def.email and not isEmail record.email
                     return callback new Error "Invalid email #{record.email}"
         # Persist
-        @exists records, (err, recordIds) ->
+        @exists records, (err, recordIds) =>
             return callback err if err
             for recordId in recordIds
                 return callback new Error "Record #{recordId} already exists" if recordId?
             multi = redis.multi()
             # Generate new identifiers
             multi.incr "#{db}:#{name}_incr" for x in records
-            multi.exec (err, recordIds) ->
+            multi.exec (err, recordIds) =>
                 return callback err if err
                 multi = redis.multi()
                 for record, i in records
@@ -203,29 +204,39 @@ module.exports = class Records extends Schema
                     # Filter null values
                     for property, value of record
                         r[property] = value if value?
+                    @serialize r
                     multi.hmset "#{db}:#{name}:#{recordId}", r
                 multi.exec (err, results) ->
                     return callback err if err
                     for result in results
                         return callback new Error 'Corrupted user database ' if result[0] is not "0"
-                    # @type records
+                    # @unserialize records
                     if options.identifiers
                         records = for record in records
                             record[identifier]
                     callback null, if isArray then records else records[0]
     
     ###
-    Check if one or more record exist.
-    ----------------------------------
+    
+    `exists(records, callback)` Check if one or more record exist
+    -------------------------------------------------------------
     The existence of a record is based on its id or any property defined as unique.
-    The return value respect the same structure as the provided records argument. Ids
-    are present if the record exists or null if it doesn't.
+    The provided callback is called with an error or the records identifiers. The 
+    identifiers respect the same structure as the provided records argument. If a 
+    record does not exists, its associated return value is null.
+
+    `records`               Record object or array of record objects.
+
+    `callback`              Called on success or failure. Received parameters are:   
+
+    *   `err`               Error object if any.   
+    *   `identifier`        Record identifiers or null values.
     ###
     exists: (records, callback) ->
         {redis} = @
         {db, name, identifier, unique} = @data
         isArray = Array.isArray records
-        records = [records] if ! isArray
+        records = [records] unless isArray
         multi = redis.multi()
         for record in records
             if typeof record is 'object'
@@ -240,7 +251,7 @@ module.exports = class Records extends Schema
                 multi.hget "#{db}:#{name}:#{record}", identifier
         multi.exec (err, recordIds) =>
             return callback err if err
-            @type recordIds
+            @unserialize recordIds
             callback null, if isArray then recordIds else recordIds[0]
     
     ###
@@ -302,10 +313,10 @@ module.exports = class Records extends Schema
         # Run the commands
         multi = redis.multi cmds
         multi.exec (err, results) =>
-            if not options.object
+            unless options.object
                 records = for record in records
                     record[identifier]
-            @type records
+            @unserialize records
             callback null, if isArray then records else records[0]
     
     ###
@@ -328,7 +339,7 @@ module.exports = class Records extends Schema
         {redis} = @
         {db, name, identifier} = @data
         isArray = Array.isArray records
-        records = [records] if ! isArray
+        records = [records] unless isArray
         @id records, {object: true}, (err, records) =>
             cmds = []
             records.forEach (record, i) ->
@@ -352,7 +363,7 @@ module.exports = class Records extends Schema
             multi = redis.multi cmds
             multi.exec (err, values) =>
                 return callback err if err
-                @type records
+                @unserialize records
                 callback null, if isArray then records else records[0]
     ###
     `list(options, callback)` List records
@@ -416,7 +427,7 @@ module.exports = class Records extends Schema
         # Sorting direction
         args.push options.direction ? 'asc'
         # Callback
-        args.push (err, values) ->
+        args.push (err, values) =>
             return callback err if err
             return callback null, [] unless values.length
             keys = Object.keys properties
@@ -424,7 +435,7 @@ module.exports = class Records extends Schema
                 record = {}
                 for property, j in keys
                     record[property] = values[i + j]
-                record
+                @unserialize record
             callback null, result
         # Run command
         multi.sort args...
@@ -476,7 +487,7 @@ module.exports = class Records extends Schema
         #    2.1 Make sure the new property is not assigned to another record
         #    2.2 Erase old index & Create new index
         # 3. Save the record
-        @id records, {object: true}, (err, records) ->
+        @id records, {object: true}, (err, records) =>
             return callback err if err
             # Stop here if a record is invalid
             for record in records
@@ -496,6 +507,7 @@ module.exports = class Records extends Schema
                         r[property] = value 
                     else
                         cmdsUpdate.push ['hdel', "#{db}:#{name}:#{recordId}", property ]
+                @serialize r
                 cmdsUpdate.push ['hmset', "#{db}:#{name}:#{recordId}", r ]
                 # If an index has changed, we need to update it
                 do (record) ->

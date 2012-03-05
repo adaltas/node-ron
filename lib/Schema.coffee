@@ -155,23 +155,52 @@ module.exports = class Schema
             @data.properties[property]
     
     ###
-    Cast record values to their correct type
-    ----------------------------------------
-    Traverse all the record properties and update 
-    values with correct types.
+    `unserialize(records)` Cast record values to their correct type
+    --------------------------------------------------------
+    Take a record or an array of records and update values with correct 
+    property types.
     ###
-    type: (records) ->
+    unserialize: (records) ->
         {properties} = @data
         isArray = Array.isArray records
-        records = [records] if ! isArray
+        records = [records] unless isArray
         for record, i in records
             continue unless record?
+            # Convert the record
             if typeof record is 'object'
                 for property, value of record
                     if properties[property]?.type is 'int' and value?
                         record[property] = parseInt value, 10
+                    else if properties[property]?.type is 'date' and value?
+                        record[property] = new Date parseInt value, 10
+            # By convension, this has to be an identifier but we can't check it
             else if typeof record is 'number' or typeof record is 'string'
                 records[i] = parseInt record
+        if isArray then records else records[0]
+    
+    ###
+    `serialize(records)` Cast record values for their insertion
+    -----------------------------------------------------------
+    Take a record or an array of records and update values with correct 
+    property types.
+    ###
+    serialize: (records) ->
+        {properties} = @data
+        isArray = Array.isArray records
+        records = [records] unless isArray
+        for record, i in records
+            continue unless record?
+            # Convert the record
+            if typeof record is 'object'
+                for property, value of record
+                    if properties[property]?.type is 'date' and value?
+                        if  typeof value is 'number'
+                            # its a timestamp
+                        else if typeof value is 'string'
+                            record[property] = parseInt value, 10
+                        else if typeof value is 'object' and value instanceof Date
+                            record[property] = value.getTime()
+        if isArray then records else records[0]
     
     ###
     Define a property as unique
