@@ -6,6 +6,21 @@ Schema
 ======
 Define a new schema.
 
+`ron`               Reference to the Ron instance   
+
+`options`           Schema definition. Options include:   
+
+*   `name`          Name of the schema.   
+*   `properties`    Properties definition, an object or an array.   
+
+Record properties may be defined by the following keys:   
+
+*   `type`          Use to cast the value inside Redis, one of `string`, `int` or `date`.   
+*   `identifier`    Mark this property as the identifier, only one property may be an identifier.   
+*   `index`         Create an index on the property.   
+*   `unique`        Create a unique index on the property.   
+*   `email`         Validate the string as an email.   
+
 Sample
 ------
 
