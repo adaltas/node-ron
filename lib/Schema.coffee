@@ -20,6 +20,7 @@ Record properties may be defined by the following keys:
 *   `index`         Create an index on the property.   
 *   `unique`        Create a unique index on the property.   
 *   `email`         Validate the string as an email.   
+*   `temporal`      Add creation and modification date transparently.   
 
 Sample
 ------
@@ -45,11 +46,14 @@ module.exports = class Schema
         @data = 
             db: ron.name
             name: options.name
+            temporal: {}
             properties: {}
             identifier: null
             index: {}
             unique: {}
             email: {}
+        if options.temporal
+            @temporal options.temporal
         if options.properties
             for name, value of options.properties
                 @property name, value
@@ -217,6 +221,26 @@ module.exports = class Schema
                             record[property] = value.getTime()
         if isArray then records else records[0]
     
+    ###
+    `temporal([options])` Define or retrieve temporal definition
+    ------------------------------------------------------------
+    Marking a schema as temporal will transparently add two new date properties,
+    the date when the record was created (by default "creation"), and the date 
+    when the record was last updated (by default "modification").
+
+    ###
+    temporal: (temporal) ->
+        if temporal?
+            if temporal is true
+                temporal = 
+                    creation: 'creation'
+                    modification: 'modification'
+            @data.temporal = temporal
+            @property temporal.creation, type: 'date'
+            @property temporal.modification, type: 'date'
+        else 
+            [ @data.temporal.creation, @data.temporal. modification ]
+
     ###
     Define a property as unique
     ---------------------------

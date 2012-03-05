@@ -164,7 +164,7 @@ module.exports = class Records extends Schema
             callback = options
             options = {}
         {redis, hash} = @
-        {db, name, properties, identifier, index, unique} = @data
+        {db, name, temporal, properties, identifier, index, unique} = @data
         isArray = Array.isArray records
         records = [records] unless isArray
         # Sanitize records
@@ -182,13 +182,20 @@ module.exports = class Records extends Schema
             for recordId in recordIds
                 return callback new Error "Record #{recordId} already exists" if recordId?
             multi = redis.multi()
+            # Get current date once if schema is temporal
+            date = new Date Date.now() if temporal?
             # Generate new identifiers
             multi.incr "#{db}:#{name}_incr" for x in records
             multi.exec (err, recordIds) =>
                 return callback err if err
                 multi = redis.multi()
                 for record, i in records
+                    # Enrich the record with its identifier
                     record[identifier] = recordId = recordIds[i]
+                    # Enrich the record with a creation date
+                    record[temporal.creation] = date if temporal?.creation? and not record[temporal.creation]?
+                    # Enrich the record with a creation date
+                    record[temporal.modification] = date if temporal?.modification? and not record[temporal.modification]?
                     multi.sadd "#{db}:#{name}_#{identifier}", recordId
                     # Deal with Unique
                     for property of unique
@@ -479,7 +486,7 @@ module.exports = class Records extends Schema
     ###
     update: (records, callback) ->
         {redis, hash} = @
-        {db, name, properties, identifier, unique, index} = @data
+        {db, name, temporal, properties, identifier, unique, index} = @data
         isArray = Array.isArray records
         records = [records] unless isArray
         # 1. Get values of indexed properties
@@ -500,6 +507,8 @@ module.exports = class Records extends Schema
                 # Stop here if we couldn't get an id
                 recordId = record[identifier]
                 return callback new Error 'Unsaved record' unless recordId
+                # Enrich the record with a modification date
+                record[temporal.modification] = new Date Date.now() if temporal?.modification? and not record[temporal.modification]?
                 r = {}
                 # Filter null values
                 for property, value of record
