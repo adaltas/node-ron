@@ -44,11 +44,12 @@ module.exports = class Records extends Schema
     constructor: (ron, schema) ->
         @redis = ron.redis
         super ron, schema
-    
     ###
-    Return all records
-    ------------------
+
+    `all(callback)` Return all records
+    ----------------------------------
     Similar to the find method with far less options and a faster implementation.
+
     ###
     all: (callback) ->
         {redis} = @
@@ -62,10 +63,22 @@ module.exports = class Records extends Schema
                 callback null, records
     
     ###
-    Clear all the records
-    ---------------------
-    Remove all the records and the references poiting to them. On 
-    success, the number of removed records is provided in the callback.
+
+    `clear(callback)` Clear all the records
+    ---------------------------------------
+    Remove all the records and the references poiting to them. This function
+    takes no other argument than the callback called on error or success.
+
+    `callback`              Received parameters are:   
+
+    *   `err`               Error object if any.   
+    *   `count`             Number of removed records on success 
+    
+    Usage:
+        ron.get('users').clear (err, count) ->
+            return console.error "Failed: #{err.message}" if err
+            console.log "#{count} records removed"
+
     ###
     clear: (callback) ->
         {redis, hash} = @
@@ -76,7 +89,7 @@ module.exports = class Records extends Schema
         # Grab index values for later removal
         indexSort = []
         indexProperties = Object.keys(index)
-        if indexProperties
+        if indexProperties.length
             indexSort.push "#{db}:#{name}_#{identifier}"
             for property in indexProperties
                 indexSort.push 'get'
@@ -126,9 +139,29 @@ module.exports = class Records extends Schema
             callback null, count
     
     ###
-    Create a new record.
+    `create(records, [options], callback)` Create new records
+    ----------------------------------------------
+    Take a record object or multiple records and insert them. The records must no 
+    exists in the database or an error will be returned in the callback. The records objects
+    passed in the function are returned in the callback with their new identifier property.
+
+    `records`               Record object or array of record objects.
+
+    `options`               Options properties include:   
+
+    *   `identifiers`       Return only the created identifiers instead of the records.
+
+    `callback`              Called on success or failure. Received parameters are:   
+
+    *   `err`               Error object if any.   
+    *   `records`           Records with their newly created identifier.
+
+
     ###
-    create: (records, callback) ->
+    create: (records, options, callback) ->
+        if arguments.length is 2
+            callback = options
+            options = {}
         {redis, hash} = @
         {db, name, properties, identifier, index, unique} = @data
         isArray = Array.isArray records
@@ -176,6 +209,9 @@ module.exports = class Records extends Schema
                     for result in results
                         return callback new Error 'Corrupted user database ' if result[0] is not "0"
                     # @type records
+                    if options.identifiers
+                        records = for record in records
+                            record[identifier]
                     callback null, if isArray then records else records[0]
     
     ###
@@ -187,7 +223,6 @@ module.exports = class Records extends Schema
     ###
     exists: (records, callback) ->
         {redis} = @
-        $ = @
         {db, name, identifier, unique} = @data
         isArray = Array.isArray records
         records = [records] if ! isArray
@@ -319,7 +354,19 @@ module.exports = class Records extends Schema
                 return callback err if err
                 @type records
                 callback null, if isArray then records else records[0]
-    
+    ###
+    `list(options, callback)` List records
+    --------------------------------------
+    List records with filtering and sorting.
+
+    Using the `union` operation:
+        Users.list
+            group: ['admin', 'redis']
+            operation: 'union'
+            direction: 'desc'
+        , (err, users) ->
+            console.log users
+    ###
     list: (options, callback) ->
         if typeof options is 'function'
             callback = options

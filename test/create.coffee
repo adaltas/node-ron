@@ -83,5 +83,20 @@ describe 'create', ->
                 err.message.should.eql 'Record 1 already exists'
                 Users.clear next
 
+    it 'should only return the newly created identifiers', (next) ->
+        Users.create [
+            username: 'my_username_1',
+            email: 'my_first@email.com',
+            password: 'my_password'
+        ,
+            username: 'my_username_2',
+            email: 'my_second@email.com',
+            password: 'my_password'
+        ], identifiers: true, (err, ids) ->
+            should.not.exist err
+            ids.length.should.equal 2
+            for id in ids then id.should.be.a 'number'
+            Users.clear next
+
 
 

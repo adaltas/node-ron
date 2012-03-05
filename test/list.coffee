@@ -25,13 +25,13 @@ describe 'list', ->
     after (next) ->
         client.quit next
 
-    it 'Test list # result empty', (next) ->
+    it 'should be empty if there are no record', (next) ->
         Users.list { }, (err, users) ->
             should.not.exist err
             users.length.should.eql 0
             next()
 
-    it 'Test list # sort', (next) ->
+    it 'should sort record according to one property', (next) ->
         Users.create [
             { username: 'username_1', email: '1@email.com', password: 'my_password' }
             { username: 'username_2', email: '2@email.com', password: 'my_password' }
