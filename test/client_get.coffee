@@ -4,20 +4,30 @@
     try config = require '../conf/test' catch e
     ron = require '..'
 
-    describe 'schema', ->
+    describe 'client get', ->
 
-    it 'should create a schema from a name', (next) ->
+    it 'should accept a string name', (next) ->
         client = ron config
         Users = client.get 'users'
         Users.should.be.instanceof ron.Schema
         Users.should.be.instanceof ron.Records
         client.quit next
 
-    it 'should create a schema from an object', (next) ->
+    it 'should accept an object with a name', (next) ->
         client = ron config
         Users = client.get name: 'users'
         Users.should.be.instanceof ron.Schema
         Users.should.be.instanceof ron.Records
+        client.quit next
+
+    it 'should mix a string name and an object', (next) ->
+        client = ron config
+        validate = (schema) ->
+            schema.name().should.equal 'users'
+            schema.property('username').should.eql { name: 'username', unique: true }
+        validate client.get 'users', temporal: true, properties: 
+            username: unique: true
+        validate client.get 'users'
         client.quit next
 
     it 'should define and retrieve an identifier', (next) ->
@@ -34,7 +44,7 @@
         ['my_index'].should.eql Users.index()
         client.quit next
 
-    it 'Define # unique', (next) ->
+    it 'should define and retrieve a unique index', (next) ->
         client = ron config
         Users = client.get name: 'users'
         Users.should.eql Users.unique('my_unique')

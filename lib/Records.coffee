@@ -343,6 +343,7 @@ module.exports = class Records extends Schema
         isArray = Array.isArray records
         records = [records] unless isArray
         @id records, {object: true}, (err, records) =>
+            return callback err if err
             cmds = []
             records.forEach (record, i) ->
                 if record[identifier] is null

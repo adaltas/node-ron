@@ -177,6 +177,18 @@ module.exports = class Schema
             @data.properties[property]
     
     ###
+    `name`  Schema name
+    -------------------
+    Return the schema name of the current instance.
+
+    Using the function :
+        Users = client 'users', properties: username: unique: true
+        console.log Users.name() is 'users'
+    ###
+    name: ->
+        @data.name
+
+    ###
     `unserialize(records)` Cast record values to their correct type
     --------------------------------------------------------
     Take a record or an array of records and update values with correct 

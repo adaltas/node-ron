@@ -70,11 +70,27 @@ module.exports = class Client
         Users.unique 'username'
         Users.index 'email'
 
+    Alternatively, the function could be called with a string 
+    followed by multiple schema definition that will be merged.
+    Here is a valid example:
+
+        client.get 'username', temporal: true, properties: username: unique: true
+
     ###
     get: (schema) ->
-        name = if typeof schema is 'string' then schema else schema.name
-        @records[name] = new Records @, schema if typeof schema isnt 'string' or not @records[name]?
-        @records[name]
+        create = true
+        if arguments.length > 1
+            if typeof arguments[0] is 'string'
+            then schema = name: arguments[0]
+            else schema = arguments[0]
+            for i in [1 ... arguments.length]
+                for k, v of arguments[i]
+                    schema[k] = v
+        else if typeof schema is 'string'
+            schema = {name: schema}
+            create = false if @records[schema.name]?
+        @records[schema.name] = new Records @, schema if create
+        @records[schema.name]
     ###
 
     `quit(callback)` Quit

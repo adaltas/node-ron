@@ -23,13 +23,13 @@ describe 'remove', ->
     after (next) ->
         client.quit next
 
-    it 'Test remove # from identifier', (next) ->
+    it 'should remove a record if providing an identifier', (next) ->
         Users.create {
             username: 'my_username'
             email: 'my@email.com'
             password: 'my_password'
         }, (err, user) ->
-            # Delete record bsed on identifier
+            # Delete record based on identifier
             Users.remove user.user_id, (err, count) ->
                 should.not.exist err
                 count.should.eql 1
