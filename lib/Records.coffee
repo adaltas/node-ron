@@ -1,9 +1,6 @@
 
 Schema = require './Schema'
 
-isEmail = (email) ->
-    /^[a-z0-9,!#\$%&'\*\+\/\=\?\^_`\{\|}~\-]+(\.[a-z0-9,!#\$%&'\*\+\/\=\?\^_`\{\|}~\-]+)*@[a-z0-9\-]+(\.[a-z0-9\-]+)*\.([a-z]{2,})$/.test(email)
-
 ###
 Records
 =======
@@ -16,10 +13,10 @@ Identifier
 Auto generated identifiers are incremented integers. The next identifier is stored in
 a key named as `{s.db}:{s.name}_incr`.
 
-Records
--------
+Data
+----
 
-Records are stored as a single hash named as `{s.db}:{s.name}:{idenfitier}`. The hash
+Records data is stored as a single hash named as `{s.db}:{s.name}:{idenfitier}`. The hash
 keys map to the record properties and the hash value map to the values associated with
 each properties.
 
@@ -142,7 +139,7 @@ module.exports = class Records extends Schema
     ###
     `create(records, [options], callback)` Create new records
     ----------------------------------------------
-    Take a record object or multiple records and insert them. The records must no 
+    Take a record object or multiple records and insert them. The records must not 
     exists in the database or an error will be returned in the callback. The records objects
     passed in the function are returned in the callback with their new identifier property.
 
@@ -151,12 +148,15 @@ module.exports = class Records extends Schema
     `options`               Options properties include:   
 
     *   `identifiers`       Return only the created identifiers instead of the records.
+    *   `validate`          Validate the records.   
 
     `callback`              Called on success or failure. Received parameters are:   
 
     *   `err`               Error object if any.   
     *   `records`           Records with their newly created identifier.
 
+    Records are not validated, it is the responsability of the client program calling `create` to either
+    call `validate` before calling `create` or to passs the `validate` options.
 
     ###
     create: (records, options, callback) ->
@@ -167,15 +167,10 @@ module.exports = class Records extends Schema
         {db, name, temporal, properties, identifier, index, unique} = @data
         isArray = Array.isArray records
         records = [records] unless isArray
-        # Sanitize records
-        for record in records
-            # Apply property definitions
-            for property, def of properties
-                # Validation check
-                if def.required and not record[property]?
-                    return callback new Error "Required property #{property}"
-                else if def.email and not isEmail record.email
-                    return callback new Error "Invalid email #{record.email}"
+        # Validate records
+        if options.validate
+            try @validate records, throw: true
+            catch e then return callback e, (if isArray then records else records[0])
         # Persist
         @exists records, (err, recordIds) =>
             return callback err if err
@@ -482,13 +477,46 @@ module.exports = class Records extends Schema
                 callback null, records.length
     
     ###
-    Update one or several records
+
+    `update(records, [options], callback)` Update one or several records
+    --------------------------------------------------------------------
+    Take a record object or multiple records and insert them. The records must 
+    exists in the database or an error will be returned in the callback. The existence 
+    of a record may be discovered through its identifier or the presence of a unique property.   
+
+    `records`               Record object or array of record objects.
+
+    `options`               Options properties include:   
+
+    *   `validate`          Validate the records.   
+
+    `callback`              Called on success or failure. Received parameters are:   
+
+    *   `err`               Error object if any.   
+    *   `records`           Records with their newly created identifier.
+
+    Records are not validated, it is the responsability of the client program calling `create` to either
+    call `validate` before calling `create` or to passs the `validate` options.
+    
+    Updating a single record
+        Users.update
+            username: 'my_username'
+            age: 28
+        , (err, user) -> console.log user
+
     ###
-    update: (records, callback) ->
+    update: (records, options, callback) ->
+        if arguments.length is 2
+            callback = options
+            options = {}
         {redis, hash} = @
         {db, name, temporal, properties, identifier, unique, index} = @data
         isArray = Array.isArray records
         records = [records] unless isArray
+        # Validate records
+        if options.validate
+            try @validate records, {throw: true, skip_required: true}
+            catch e then return callback e, (if isArray then records else records[0])
         # 1. Get values of indexed properties
         # 2. If indexed properties has changed
         #    2.1 Make sure the new property is not assigned to another record

@@ -1,6 +1,9 @@
 
 crypto = require 'crypto'
 
+isEmail = (email) ->
+    /^[a-z0-9,!#\$%&'\*\+\/\=\?\^_`\{\|}~\-]+(\.[a-z0-9,!#\$%&'\*\+\/\=\?\^_`\{\|}~\-]+)*@[a-z0-9\-]+(\.[a-z0-9\-]+)*\.([a-z]{2,})$/.test(email)
+
 ###
 Schema
 ======
@@ -15,7 +18,7 @@ Define a new schema.
 
 Record properties may be defined by the following keys:   
 
-*   `type`          Use to cast the value inside Redis, one of `string`, `int` or `date`.   
+*   `type`          Use to cast the value inside Redis, one of `string`, `int`, `date` or `email`.   
 *   `identifier`    Mark this property as the identifier, only one property may be an identifier.   
 *   `index`         Create an index on the property.   
 *   `unique`        Create a unique index on the property.   
@@ -240,6 +243,42 @@ module.exports = class Schema
             @property temporal.modification, type: 'date'
         else 
             [ @data.temporal.creation, @data.temporal. modification ]
+
+    ###
+
+    `validate(records, [options])` Validate
+    ---------------------------------------
+    Validate the properties of one or more records. Return a validation 
+    object or an array of validation objects depending on the provided 
+    records arguments. Keys of a validation object are the name of the invalid 
+    properties and their value is a string indicating the type of error.
+
+    `records`           Record object or array of record objects.
+
+    `options`           Options include:   
+
+    *   `throw`         Throw errors on first invalid property instead of returning a validation object.   
+    *   `skip_required` Doesn't validate missing properties defined as `required`, usefull for partial update.
+
+    ###
+    validate: (records, options = {}) ->
+        {db, name, properties} = @data
+        # console.log 'records', records
+        isArray = Array.isArray records
+        records = [records] unless isArray
+        validations = for record in records
+            validation = {}
+            for x, property of properties
+                if not options.skip_required and property.required and not record[property.name]?
+                    if options.throw
+                    then throw new Error "Required property #{property.name}"
+                    else validation[property.name] = 'required'
+                else if property.type is 'email' and not isEmail record[property.name]
+                    if options.throw
+                    then throw new Error "Invalid email #{record[property.name]}"
+                    else validation[property.name] = 'invalid_email'
+            validation
+        if isArray then validations else validations[0]
 
     ###
     Define a property as unique
