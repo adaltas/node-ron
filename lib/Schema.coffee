@@ -5,9 +5,8 @@ isEmail = (email) ->
     /^[a-z0-9,!#\$%&'\*\+\/\=\?\^_`\{\|}~\-]+(\.[a-z0-9,!#\$%&'\*\+\/\=\?\^_`\{\|}~\-]+)*@[a-z0-9\-]+(\.[a-z0-9\-]+)*\.([a-z]{2,})$/.test(email)
 
 ###
-Schema
-======
-Define a new schema.
+Schema definition
+=================
 
 `ron`               Reference to the Ron instance   
 
@@ -28,7 +27,7 @@ Record properties may be defined by the following keys:
 Sample
 ------
 
-    ron.schema 
+    ron.get 
         name: 'users'
         properties: 
             user_id: identifier: true
@@ -60,7 +59,6 @@ module.exports = class Schema
         if options.properties
             for name, value of options.properties
                 @property name, value
-    
     ###
     Define property as en email
     ---------------------------
@@ -84,7 +82,6 @@ module.exports = class Schema
         # Get the property
         else
             @data.email
-
     ###
     Hash a key
     ----------
@@ -94,7 +91,6 @@ module.exports = class Schema
     hash: (key) ->
         key = "#{key}" if typeof key is 'number'
         return if key? then crypto.createHash('sha1').update(key).digest('hex') else 'null'
-    
     ###
     Define a property as an identifier
     ----------------------------------
@@ -114,7 +110,6 @@ module.exports = class Schema
         # Get the property
         else
             @data.identifier
-    
     ###
     Define a property as indexable or return all index properties
     -------------------------------------------------------------
@@ -142,7 +137,6 @@ module.exports = class Schema
         # Get the property
         else
             Object.keys(@data.index)
-
     ###
     Retrieve/define a new property
     ------------------------------
@@ -175,7 +169,6 @@ module.exports = class Schema
             @
         else
             @data.properties[property]
-    
     ###
     `name`  Schema name
     -------------------
@@ -187,7 +180,6 @@ module.exports = class Schema
     ###
     name: ->
         @data.name
-
     ###
     `unserialize(records)` Cast record values to their correct type
     --------------------------------------------------------
@@ -211,7 +203,6 @@ module.exports = class Schema
             else if typeof record is 'number' or typeof record is 'string'
                 records[i] = parseInt record
         if isArray then records else records[0]
-    
     ###
     `serialize(records)` Cast record values for their insertion
     -----------------------------------------------------------
@@ -235,7 +226,6 @@ module.exports = class Schema
                         else if typeof value is 'object' and value instanceof Date
                             record[property] = value.getTime()
         if isArray then records else records[0]
-    
     ###
     `temporal([options])` Define or retrieve temporal definition
     ------------------------------------------------------------
@@ -255,7 +245,6 @@ module.exports = class Schema
             @property temporal.modification, type: 'date'
         else 
             [ @data.temporal.creation, @data.temporal. modification ]
-
     ###
 
     `validate(records, [options])` Validate
@@ -291,7 +280,6 @@ module.exports = class Schema
                     else validation[property.name] = 'invalid_email'
             validation
         if isArray then validations else validations[0]
-
     ###
     Define a property as unique
     ---------------------------

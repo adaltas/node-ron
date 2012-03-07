@@ -2,8 +2,8 @@
 Schema = require './Schema'
 
 ###
-Records
-=======
+Records access and manipulation
+===============================
 
 Implement object based storage with indexing support.
 
@@ -59,7 +59,6 @@ module.exports = class Records extends Schema
                 return callback err if err
                 @unserialize records
                 callback null, records
-    
     ###
 
     `clear(callback)` Clear all the records
@@ -125,7 +124,6 @@ module.exports = class Records extends Schema
             multi.exec (err, results) ->
                 return callback err if err
                 callback null, count
-    
     ###
     Count the number of records present in the database.
     ###
@@ -135,7 +133,6 @@ module.exports = class Records extends Schema
         @redis.scard "#{db}:#{name}_#{identifier}", (err, count) ->
             return callback err if err
             callback null, count
-    
     ###
     `create(records, [options], callback)` Create new records
     ----------------------------------------------
@@ -217,7 +214,6 @@ module.exports = class Records extends Schema
                         records = for record in records
                             record[identifier]
                     callback null, if isArray then records else records[0]
-    
     ###
     
     `exists(records, callback)` Check if one or more record exist
@@ -255,8 +251,69 @@ module.exports = class Records extends Schema
             return callback err if err
             @unserialize recordIds
             callback null, if isArray then recordIds else recordIds[0]
+    ###
+
+    `get(records, [options], callback)` Retrieve one or multiple records
+    --------------------------------------------------------------------
+    If options is an array, it is considered to be the list of properties to 
+    retrieve. By default, unless the `force` option is defined, only the properties
+    not yet defined in the provided records are fetch from Redis.   
+
+    `options`               All options are optional. Options properties include:   
+    
+    *   `properties`        Array of properties to fetch, all properties if not defined.   
+    *   `force`             Force the retrieval of properties even if already present in the record objects.   
+    *   `accept_null`       Skip objects if they are provided as null.   
+
+    `callback`              Called on success or failure. Received parameters are:   
+
+    *   `err`               Error object if the command failed   
+    *   `records`           Object or array of object if command succeed. Objects are null if records are not found.   
     
     ###
+    get: (records, options, callback) ->
+        if arguments.length is 2
+            callback = options
+            options = {}
+        if Array.isArray options
+            options = {properties: options}
+        {redis} = @
+        {db, name, identifier} = @data
+        isArray = Array.isArray records
+        records = [records] unless isArray
+        # Quick exit for accept_null
+        return callback null, null if options.accept_null? and not records.some((record) -> record isnt null)
+        # Retrieve records identifiers
+        @id records, {object: true, accept_null: options.accept_null?}, (err, records) =>
+            return callback err if err
+            cmds = []
+            records.forEach (record, i) ->
+                # An error would have been thrown by id if record was null and accept_null wasn't provided
+                return unless record?
+                if record[identifier] is null
+                    records[i] = null
+                else if options.properties?
+                    options.properties.forEach (property) ->
+                        unless options.force or record[property]
+                            recordId = record[identifier]
+                            cmds.push ['hget', "#{db}:#{name}:#{recordId}", property, (err, value)->
+                                record[property] = value
+                            ]
+                else
+                    recordId = record[identifier]
+                    cmds.push ['hgetall', "#{db}:#{name}:#{recordId}", (err, values)->
+                        for property, value of values
+                            record[property] = value
+                    ]
+            if cmds.length is 0
+                return callback null, if isArray then records else records[0]
+            multi = redis.multi cmds
+            multi.exec (err, values) =>
+                return callback err if err
+                @unserialize records
+                callback null, if isArray then records else records[0]
+    ###
+
     Create or extract one or several ids.
     -------------------------------------
     The method doesn't hit the database to check the existance of an id if it is already provided.
@@ -269,6 +326,28 @@ module.exports = class Records extends Schema
     - object: return record objects instead of ids
     - accept_null: prevent error throwing if record is null
     The id will be set to null if the record wasn't discovered in the database
+
+    `records`               Record object or array of record objects.
+
+    `options`               Options properties include:   
+
+    *   `accept_null`       Skip objects if they are provided as null.   
+    *   `object`            Return an object in the callback even if it recieve an id instead of a record.   
+
+    Provisionning 2 identifiers:
+
+        users = [
+            {username: 'username_1'}
+            {username: 'username_2'}
+        ]
+        Users.get 'users', properties:
+            user_id: identifier: true
+            username: unique: true
+        Users.id users, (err, users) ->
+            should.not.exist err
+            ids = for user in users then user.user_id
+            console.log ids
+
     ###
     id: (records, options, callback) ->
         if arguments.length is 2
@@ -282,8 +361,9 @@ module.exports = class Records extends Schema
         err = null
         for record, i in records
             if typeof record is 'object'
-                if not record?
-                    if not options.accept_null
+                unless record?
+                    # Check if we allow records to be null
+                    unless options.accept_null 
                         return callback new Error 'Invalid object, got ' + (JSON.stringify record)
                 else if record[identifier]?
                     # It's perfect, no need to hit redis
@@ -320,66 +400,31 @@ module.exports = class Records extends Schema
                     record[identifier]
             @unserialize records
             callback null, if isArray then records else records[0]
-    
     ###
-    Retrieve one or multiple records
-    --------------------------------
-    If options is an array, it is considered to be the list of properties to retrieve.
-    Options are
-    -   properties, array of properties to fetch, all properties if not provided
-    -   force, force the retrieval of properties even if already present in the record objects
-    callback arguments are
-    -   err, error object if the command failed
-    -   records, object or array of object if command succeed. Object are null if record was not found
-    ###
-    get: (records, options, callback) ->
-        if arguments.length is 2
-            callback = options
-            options = {}
-        if Array.isArray options
-            options = {properties: options}
-        {redis} = @
-        {db, name, identifier} = @data
-        isArray = Array.isArray records
-        records = [records] unless isArray
-        @id records, {object: true}, (err, records) =>
-            return callback err if err
-            cmds = []
-            records.forEach (record, i) ->
-                if record[identifier] is null
-                    records[i] = null
-                else if options.properties?
-                    options.properties.forEach (property) ->
-                        if ! options.force and ! record[property]
-                            recordId = record[identifier]
-                            cmds.push ['hget', "#{db}:#{name}:#{recordId}", property, (err, value)->
-                                record[property] = value
-                            ]
-                else
-                    recordId = record[identifier]
-                    cmds.push ['hgetall', "#{db}:#{name}:#{recordId}", (err, values)->
-                        for property, value of values
-                            record[property] = value
-                    ]
-            if cmds.length is 0
-                return callback null, if isArray then records else records[0]
-            multi = redis.multi cmds
-            multi.exec (err, values) =>
-                return callback err if err
-                @unserialize records
-                callback null, if isArray then records else records[0]
-    ###
-    `list(options, callback)` List records
+
+    `list([options], callback)` List records
     --------------------------------------
     List records with filtering and sorting.
 
-    Using the `union` operation:
+    Using the `union` operation:   
+
+        Users.list
+            where: group: ['admin', 'redis']
+            operation: 'union'
+            direction: 'desc'
+        , (err, users) ->
+            console.log users
+    
+    An alternative syntax is to bypass the `where` option, the exemple above
+    could be rewritten as:   
+
         Users.list
             group: ['admin', 'redis']
             operation: 'union'
             direction: 'desc'
         , (err, users) ->
             console.log users
+
     ###
     list: (options, callback) ->
         if typeof options is 'function'
@@ -444,7 +489,6 @@ module.exports = class Records extends Schema
         multi.sort args...
         multi.del tempkey if tempkey
         multi.exec()
-    
     ###
     Remove one or several records
     -----------------------------
@@ -476,7 +520,6 @@ module.exports = class Records extends Schema
             multi.exec (err, results) ->
                 return callback err if err
                 callback null, records.length
-    
     ###
 
     `update(records, [options], callback)` Update one or several records

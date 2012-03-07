@@ -71,3 +71,36 @@ describe 'get', ->
                 user.username.should.eql 'my_username'
                 should.not.exist user.email
                 Users.clear next
+
+    it 'should be able to get null records with option accept_null', (next) ->
+        Users.create
+            username: 'my_username',
+            email: 'my@email.com',
+        , (err, user) ->
+            userId = user.user_id
+            # A single null record
+            Users.get null, accept_null: true, (err, user) ->
+                should.not.exist err
+                should.not.exist user
+                # Multiple all null records
+                Users.get [null, null], accept_null: true, (err, user) ->
+                    should.not.exist err
+                    should.not.exist user
+                    # Multiple with null records
+                    Users.get [null, userId, null], accept_null: true, (err, users) ->
+                        should.not.exist err
+                        users.length.should.eql 3
+                        should.not.exist users[0]
+                        users[1].username.should.eql 'my_username'
+                        should.not.exist users[2]
+                        Users.clear next
+
+
+
+
+
+
+
+
+
+
