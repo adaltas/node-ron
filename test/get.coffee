@@ -83,9 +83,10 @@ describe 'get', ->
                 should.not.exist err
                 should.not.exist user
                 # Multiple all null records
-                Users.get [null, null], accept_null: true, (err, user) ->
+                Users.get [null, null], accept_null: true, (err, users) ->
                     should.not.exist err
-                    should.not.exist user
+                    users.length.should.eql 2
+                    for user in users then should.not.exist user
                     # Multiple with null records
                     Users.get [null, userId, null], accept_null: true, (err, users) ->
                         should.not.exist err

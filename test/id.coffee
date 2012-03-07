@@ -62,9 +62,9 @@ describe 'id', ->
         # Test an array of 3 arguments, 
         # but the second is invalid since it's an empty object
         Users.id [1, {}, {user_id: 2}], (err, user) ->
-            err.message.should.eql 'Invalid object, got {}'
+            err.message.should.eql 'Invalid record, got {}'
             Users.id {}, (err, user) ->
-                err.message.should.eql 'Invalid object, got {}'
+                err.message.should.eql 'Invalid record, got {}'
                 Users.clear next
 
     it 'Test id # missing unique', (next) ->
@@ -116,9 +116,9 @@ describe 'id', ->
         # Test an array of 3 arguments, 
         # but the second is invalid since it's a boolean
         Users.id [1, null, {user_id: 2}], (err, users) ->
-            err.message.should.eql 'Invalid object, got null'
+            err.message.should.eql 'Null record'
             Users.id null, (err, user) ->
-                err.message.should.eql 'Invalid object, got null'
+                err.message.should.eql 'Null record'
                 Users.clear next
 
     it 'Test id # accept null', (next) ->

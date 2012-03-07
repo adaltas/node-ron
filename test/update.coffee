@@ -27,7 +27,7 @@ describe 'update', ->
         it 'missing id', (next) ->
             Users.update [{email: 'missing@email.com'}], (err, users) ->
                 # Todo, could be "Record without identifier or unique properties
-                err.message.should.eql 'Invalid object, got {"email":"missing@email.com"}' 
+                err.message.should.eql 'Invalid record, got {"email":"missing@email.com"}' 
                 Users.clear next
 
         it 'should use unique index and fail because the provided value is not indexed', (next) ->

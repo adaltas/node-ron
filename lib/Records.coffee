@@ -282,7 +282,8 @@ module.exports = class Records extends Schema
         isArray = Array.isArray records
         records = [records] unless isArray
         # Quick exit for accept_null
-        return callback null, null if options.accept_null? and not records.some((record) -> record isnt null)
+        if options.accept_null? and not records.some((record) -> record isnt null)
+            return callback null, if isArray then records else records[0]
         # Retrieve records identifiers
         @id records, {object: true, accept_null: options.accept_null?}, (err, records) =>
             return callback err if err
@@ -364,7 +365,7 @@ module.exports = class Records extends Schema
                 unless record?
                     # Check if we allow records to be null
                     unless options.accept_null 
-                        return callback new Error 'Invalid object, got ' + (JSON.stringify record)
+                        return callback new Error 'Null record'
                 else if record[identifier]?
                     # It's perfect, no need to hit redis
                 else if record.username? #todo
@@ -380,7 +381,7 @@ module.exports = class Records extends Schema
                                 record[identifier] = recordId
                             )(record)]
                     # Error if no identifier and no unique value provided
-                    return callback new Error 'Invalid object, got ' + (JSON.stringify record) unless withUnique
+                    return callback new Error 'Invalid record, got ' + (JSON.stringify record) unless withUnique
             else if typeof record is 'number' or typeof record is 'string'
                 records[i] = {}
                 records[i][identifier] = record
