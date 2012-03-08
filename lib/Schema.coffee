@@ -8,21 +8,21 @@ isEmail = (email) ->
 Schema definition
 =================
 
-`ron`               Reference to the Ron instance   
+`ron`                   Reference to the Ron instance   
 
-`options`           Schema definition. Options include:   
+`options`               Schema definition. Options include:   
 
-*   `name`          Name of the schema.   
-*   `properties`    Properties definition, an object or an array.   
+*   `name`              Name of the schema.   
+*   `properties`        Properties definition, an object or an array.   
 
 Record properties may be defined by the following keys:   
 
-*   `type`          Use to cast the value inside Redis, one of `string`, `int`, `date` or `email`.   
-*   `identifier`    Mark this property as the identifier, only one property may be an identifier.   
-*   `index`         Create an index on the property.   
-*   `unique`        Create a unique index on the property.   
-*   `email`         Validate the string as an email.   
-*   `temporal`      Add creation and modification date transparently.   
+*   `type`              Use to cast the value inside Redis, one of `string`, `int`, `date` or `email`.   
+*   `identifier`        Mark this property as the identifier, only one property may be an identifier.   
+*   `index`             Create an index on the property.   
+*   `unique`            Create a unique index on the property.   
+*   `email`             Validate the string as an email.   
+*   `temporal`          Add creation and modification date transparently.   
 
 Sample
 ------
@@ -170,44 +170,26 @@ module.exports = class Schema
         else
             @data.properties[property]
     ###
-    `name`  Schema name
-    -------------------
+
+    `name()`
+    --------
     Return the schema name of the current instance.
 
     Using the function :
         Users = client 'users', properties: username: unique: true
         console.log Users.name() is 'users'
+
     ###
-    name: ->
-        @data.name
+    name: -> @data.name
     ###
-    `unserialize(records)` Cast record values to their correct type
-    --------------------------------------------------------
+
+    `serialize(records)`
+    --------------------
+    Cast record values before their insertion into Redis.
+
     Take a record or an array of records and update values with correct 
     property types.
-    ###
-    unserialize: (records) ->
-        {properties} = @data
-        isArray = Array.isArray records
-        records = [records] unless isArray
-        for record, i in records
-            continue unless record?
-            # Convert the record
-            if typeof record is 'object'
-                for property, value of record
-                    if properties[property]?.type is 'int' and value?
-                        record[property] = parseInt value, 10
-                    else if properties[property]?.type is 'date' and value?
-                        record[property] = new Date parseInt value, 10
-            # By convension, this has to be an identifier but we can't check it
-            else if typeof record is 'number' or typeof record is 'string'
-                records[i] = parseInt record
-        if isArray then records else records[0]
-    ###
-    `serialize(records)` Cast record values for their insertion
-    -----------------------------------------------------------
-    Take a record or an array of records and update values with correct 
-    property types.
+
     ###
     serialize: (records) ->
         {properties} = @data
@@ -222,7 +204,10 @@ module.exports = class Schema
                         if  typeof value is 'number'
                             # its a timestamp
                         else if typeof value is 'string'
-                            record[property] = parseInt value, 10
+                            if /^\d+$/.test value
+                                record[property] = parseInt value, 10
+                            else
+                                record[property] = Date.parse value
                         else if typeof value is 'object' and value instanceof Date
                             record[property] = value.getTime()
         if isArray then records else records[0]
@@ -245,41 +230,6 @@ module.exports = class Schema
             @property temporal.modification, type: 'date'
         else 
             [ @data.temporal.creation, @data.temporal. modification ]
-    ###
-
-    `validate(records, [options])` Validate
-    ---------------------------------------
-    Validate the properties of one or more records. Return a validation 
-    object or an array of validation objects depending on the provided 
-    records arguments. Keys of a validation object are the name of the invalid 
-    properties and their value is a string indicating the type of error.
-
-    `records`           Record object or array of record objects.
-
-    `options`           Options include:   
-
-    *   `throw`         Throw errors on first invalid property instead of returning a validation object.   
-    *   `skip_required` Doesn't validate missing properties defined as `required`, usefull for partial update.
-
-    ###
-    validate: (records, options = {}) ->
-        {db, name, properties} = @data
-        # console.log 'records', records
-        isArray = Array.isArray records
-        records = [records] unless isArray
-        validations = for record in records
-            validation = {}
-            for x, property of properties
-                if not options.skip_required and property.required and not record[property.name]?
-                    if options.throw
-                    then throw new Error "Required property #{property.name}"
-                    else validation[property.name] = 'required'
-                else if property.type is 'email' and not isEmail record[property.name]
-                    if options.throw
-                    then throw new Error "Invalid email #{record[property.name]}"
-                    else validation[property.name] = 'invalid_email'
-            validation
-        if isArray then validations else validations[0]
     ###
     Define a property as unique
     ---------------------------
@@ -304,3 +254,82 @@ module.exports = class Schema
         # Get the property
         else
             Object.keys(@data.unique)
+    ###
+
+    `unserialize(records, [options])`
+    ---------------------------------
+    Cast record values to their correct type.   
+    
+    Take a record or an array of records and update values with correct 
+    property types.   
+
+    `options`               Options include:   
+
+    *   `properties`        Array of properties to be returned.  
+    *   `milliseconds`      Convert date value to milliseconds timestamps instead of `Date` objects.   
+    *   `seconds`           Convert date value to seconds timestamps instead of `Date` objects.   
+
+    ###
+    unserialize: (records, options = {}) ->
+        {properties} = @data
+        isArray = Array.isArray records
+        records = [records] unless isArray
+        for record, i in records
+            continue unless record?
+            # Convert the record
+            if typeof record is 'object'
+                for property, value of record
+                    if options.properties and options.properties.indexOf(property) is -1
+                        delete record[property]
+                        continue
+                    if properties[property]?.type is 'int' and value?
+                        record[property] = parseInt value, 10
+                    else if properties[property]?.type is 'date' and value?
+                        if /^\d+$/.test value
+                            value = parseInt value, 10
+                        else
+                            value = Date.parse value
+                        if options.milliseconds
+                            record[property] = value
+                        else if options.seconds
+                            record[property] = Math.round( value / 1000 )
+                        else record[property] = new Date value
+            # By convension, this has to be an identifier but we can't check it
+            else if typeof record is 'number' or typeof record is 'string'
+                records[i] = parseInt record
+        if isArray then records else records[0]
+    ###
+
+    `validate(records, [options])` Validate
+    ---------------------------------------
+    Validate the properties of one or more records. Return a validation 
+    object or an array of validation objects depending on the provided 
+    records arguments. Keys of a validation object are the name of the invalid 
+    properties and their value is a string indicating the type of error.
+
+    `records`               Record object or array of record objects.
+
+    `options`               Options include:   
+
+    *   `throw`             Throw errors on first invalid property instead of returning a validation object.   
+    *   `skip_required`     Doesn't validate missing properties defined as `required`, usefull for partial update.
+
+    ###
+    validate: (records, options = {}) ->
+        {db, name, properties} = @data
+        # console.log 'records', records
+        isArray = Array.isArray records
+        records = [records] unless isArray
+        validations = for record in records
+            validation = {}
+            for x, property of properties
+                if not options.skip_required and property.required and not record[property.name]?
+                    if options.throw
+                    then throw new Error "Required property #{property.name}"
+                    else validation[property.name] = 'required'
+                else if property.type is 'email' and not isEmail record[property.name]
+                    if options.throw
+                    then throw new Error "Invalid email #{record[property.name]}"
+                    else validation[property.name] = 'invalid_email'
+            validation
+        if isArray then validations else validations[0]

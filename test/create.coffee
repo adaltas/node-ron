@@ -98,5 +98,20 @@ describe 'create', ->
             for id in ids then id.should.be.a 'number'
             Users.clear next
 
+    it 'should only return selected properties', (next) ->
+        Users.create [
+            username: 'my_username_1',
+            email: 'my_first@email.com',
+            password: 'my_password'
+        ,
+            username: 'my_username_2',
+            email: 'my_second@email.com',
+            password: 'my_password'
+        ], properties: ['email'], (err, users) ->
+            should.not.exist err
+            users.length.should.equal 2
+            for user in users then Object.keys(user).should.eql ['email']
+            Users.clear next
+
 
 

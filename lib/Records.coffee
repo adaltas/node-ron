@@ -144,6 +144,7 @@ module.exports = class Records extends Schema
 
     `options`               Options properties include:   
 
+    *   `properties`        Array of properties to be returned.   
     *   `identifiers`       Return only the created identifiers instead of the records.
     *   `validate`          Validate the records.   
 
@@ -188,6 +189,7 @@ module.exports = class Records extends Schema
                     record[temporal.creation] = date if temporal?.creation? and not record[temporal.creation]?
                     # Enrich the record with a creation date
                     record[temporal.modification] = date if temporal?.modification? and not record[temporal.modification]?
+                    # Register new identifier
                     multi.sadd "#{db}:#{name}_#{identifier}", recordId
                     # Deal with Unique
                     for property of unique
@@ -205,11 +207,11 @@ module.exports = class Records extends Schema
                         r[property] = value if value?
                     @serialize r
                     multi.hmset "#{db}:#{name}:#{recordId}", r
-                multi.exec (err, results) ->
+                multi.exec (err, results) =>
                     return callback err if err
                     for result in results
                         return callback new Error 'Corrupted user database ' if result[0] is not "0"
-                    # @unserialize records
+                    @unserialize records, options
                     if options.identifiers
                         records = for record in records
                             record[identifier]
@@ -293,7 +295,7 @@ module.exports = class Records extends Schema
                 return unless record?
                 if record[identifier] is null
                     records[i] = null
-                else if options.properties?
+                else if options.properties?.length
                     options.properties.forEach (property) ->
                         unless options.force or record[property]
                             recordId = record[identifier]

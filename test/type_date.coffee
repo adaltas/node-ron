@@ -4,7 +4,7 @@ should = require 'should'
 try config = require '../conf/test' catch e
 ron = require '../index'
 
-describe 'type', ->
+describe 'type date', ->
 
     client = Users = null
     
@@ -36,8 +36,32 @@ describe 'type', ->
         result.should.be.an.instanceof Array
         result.should.eql [a_date: date]
 
+    it 'should parse date provided as string', ->
+        Records = client.get
+            name: 'records'
+            properties: 
+                a_date: type: 'date'
+        date = '2008-09-10'
+        # Serialization
+        result = Records.serialize a_date: date
+        result.should.eql a_date: (new Date date).getTime()
+        # Deserialization
+        result = Records.unserialize a_date: date
+        result.should.eql a_date: new Date date
 
-    it 'should deal with dates', (next) ->
+    it 'should unserialize dates in seconds and milliseconds', ->
+        Records = client.get
+            name: 'records'
+            properties: 
+                a_date: type: 'date'
+        date = '2008-09-10'
+        # Deserialization
+        result = Records.unserialize a_date: date, { milliseconds: true }
+        result.a_date.should.eql 1221004800000
+        result = Records.unserialize a_date: date, { seconds: true }
+        result.a_date.should.eql 1221004800
+
+    it 'should deal with Date objects', (next) ->
         Records = client.get
             name: 'records'
             properties: 
@@ -51,7 +75,7 @@ describe 'type', ->
             , (err, record) ->
                 should.not.exist err
                 recordId = record.record_id
-                record.a_date.should.equal date
+                record.a_date.should.eql date
                 # Test all
                 Records.all (err, records) ->
                     should.not.exist err
