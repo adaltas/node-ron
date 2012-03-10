@@ -144,9 +144,11 @@ module.exports = class Records extends Schema
 
     `options`               Options properties include:   
 
-    *   `properties`        Array of properties to be returned.   
     *   `identifiers`       Return only the created identifiers instead of the records.
     *   `validate`          Validate the records.   
+    *   `properties`        Array of properties to be returned.   
+    *   `milliseconds`      Convert date value to milliseconds timestamps instead of `Date` objects.   
+    *   `seconds`           Convert date value to seconds timestamps instead of `Date` objects.   
 
     `callback`              Called on success or failure. Received parameters are:   
 
@@ -316,18 +318,19 @@ module.exports = class Records extends Schema
                 @unserialize records
                 callback null, if isArray then records else records[0]
     ###
+    id(records, [options], callback)
+    --------------------------------
+    Extract record identifiers or set the identifier to null if its associated record could not be found.
 
-    Create or extract one or several ids.
-    -------------------------------------
-    The method doesn't hit the database to check the existance of an id if it is already provided.
-    Set the provided object to null if an id couldn't be found.
+    The method doesn't hit the database to validate record values and if an id is 
+    provided, it wont check its existence. When a record has no identifier but a unique value, then its
+    identifier will be fetched from Redis. 
+    
     
     todo: With no argument, generate an new id
     todo: IF first argument is a number, genererate the number of new id
     If first argument is an object or an array of object, extract the id from those objects
-    Options:
-    - object: return record objects instead of ids
-    - accept_null: prevent error throwing if record is null
+
     The id will be set to null if the record wasn't discovered in the database
 
     `records`               Record object or array of record objects.
@@ -337,16 +340,26 @@ module.exports = class Records extends Schema
     *   `accept_null`       Skip objects if they are provided as null.   
     *   `object`            Return an object in the callback even if it recieve an id instead of a record.   
 
-    Provisionning 2 identifiers:
+    Use reverse index lookup to extract user ids:
 
-        users = [
-            {username: 'username_1'}
-            {username: 'username_2'}
-        ]
         Users.get 'users', properties:
             user_id: identifier: true
             username: unique: true
-        Users.id users, (err, users) ->
+        Users.id [
+            {username: 'username_1'}
+            {username: 'username_2'}
+        ], (err, ids) ->
+            should.not.exist err
+            console.log ids
+
+    Use the `object` option to return records instead of ids:
+
+        Users.get 'users', properties:
+            user_id: identifier: true
+            username: unique: true
+        Users.id [
+            1, {user_id: 2} ,{username: 'username_3'}
+        ], object: true, (err, users) ->
             should.not.exist err
             ids = for user in users then user.user_id
             console.log ids
@@ -370,10 +383,6 @@ module.exports = class Records extends Schema
                         return callback new Error 'Null record'
                 else if record[identifier]?
                     # It's perfect, no need to hit redis
-                else if record.username? #todo
-                    cmds.push ['hget', "#{db}:#{name}_username", record.username, ((record) -> (err, recordId) ->
-                        record[identifier] = recordId
-                    )(record)]
                 else
                     withUnique = false
                     for property of unique
@@ -405,9 +414,24 @@ module.exports = class Records extends Schema
             callback null, if isArray then records else records[0]
     ###
 
-    `list([options], callback)` List records
-    --------------------------------------
-    List records with filtering and sorting.
+    `list([options], callback)`
+    ---------------------------
+    List records with support for filtering and sorting.
+
+    `options`               Options properties include:   
+
+    *   `where`
+    *   `operation`
+    *   `sort`
+    *   `direction`
+    *   `properties`        Array of properties to be returned.   
+    *   `milliseconds`      Convert date value to milliseconds timestamps instead of `Date` objects.   
+    *   `seconds`           Convert date value to seconds timestamps instead of `Date` objects.   
+
+    `callback`              Called on success or failure. Received parameters are:   
+
+    *   `err`               Error object if any.   
+    *   `records`           Records fetched from Redis.
 
     Using the `union` operation:   
 
@@ -486,7 +510,7 @@ module.exports = class Records extends Schema
                 record = {}
                 for property, j in keys
                     record[property] = values[i + j]
-                @unserialize record
+                @unserialize record, options
             callback null, result
         # Run command
         multi.sort args...

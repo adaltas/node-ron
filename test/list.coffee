@@ -71,7 +71,7 @@ describe 'list', ->
                 users[2].username.should.eql 'username_1'
                 Users.clear next
 
-    it 'Test list # where inter, same property', (next) ->
+    it 'should honor inter operation with a property having the same values', (next) ->
         Users.create [
             { username: 'username_1', email: '1@email.com', password: 'my_password', name: 'name_1' }
             { username: 'username_2', email: '2@email.com', password: 'my_password', name: 'name_2' }
@@ -82,4 +82,17 @@ describe 'list', ->
                 should.not.exist err
                 users.length.should.eql 1
                 users[0].username.should.eql 'username_3'
+                Users.clear next
+
+    it 'should return only selected properties', (next) ->
+        Users.create [
+            { username: 'username_1', email: '1@email.com', password: 'my_password', name: 'name_1' }
+            { username: 'username_2', email: '2@email.com', password: 'my_password', name: 'name_2' }
+        ], (err, users) ->
+            Users.list { properties: ['username'], sort: 'username', direction: 'desc' }, (err, users) ->
+                should.not.exist err
+                users.length.should.eql 2
+                for user in users then Object.keys(user).should.eql ['username']
+                users[0].username.should.eql 'username_2'
+                users[1].username.should.eql 'username_1'
                 Users.clear next

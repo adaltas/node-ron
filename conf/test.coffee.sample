@@ -1,5 +1,5 @@
 
 module.exports =
-    redis_port: 4501
-    redis_host: 'localhost'
+    port: 4501
+    host: 'localhost'
     name: 'test'

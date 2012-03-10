@@ -23,16 +23,16 @@ module.exports = class Client
 
     *   `name`              A namespace for the application, all keys with be prefixed with "#{name}:". Default to "ron"   
     *   `redis`             Provide an existing instance in case you don't want a new one to be created.   
-    *   `redis_host`        Redis database hostname.   
-    *   `redis_port`        Redis database port.   
-    *   `redis_password`    Redis databse password.   
-    *   `redis_database`    Integer defining the redis database.   
+    *   `host`        Redis database hostname.   
+    *   `port`        Redis database port.   
+    *   `password`    Redis databse password.   
+    *   `database`    Integer defining the redis database.   
 
     Basic example:
         ron = require 'ron'
         client = ron
-            redis_host: '127.0.0.1'
-            redis_port: 6379
+            host: '127.0.0.1'
+            port: 6379
 
     ###
     constructor: (options = {}) ->
@@ -43,9 +43,9 @@ module.exports = class Client
         if @options.redis
             @redis = @options.redis
         else
-            @redis = redis.createClient options.redis_port ? 6379, options.redis_host ? '127.0.0.1'
-            @redis.auth options.redis_password if options.redis_password?
-            @redis.select options.redis_database if options.redis_database?
+            @redis = redis.createClient options.port ? 6379, options.host ? '127.0.0.1'
+            @redis.auth options.password if options.password?
+            @redis.select options.database if options.database?
     ###
 
     `get(schema)` Records definition and access

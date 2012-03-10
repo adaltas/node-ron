@@ -15,24 +15,33 @@ Usage
 
 ```javascript
 ron = require('ron');
+// Client connection
 client = ron({
-    redis_port: 6379
-    redis_host: '127.0.0.1'
+    port: 6379
+    host: '127.0.0.1'
     name: 'auth'
 });
-users = client.define('users');
-users.property('id', {identifier: true});
-users.property('username', {unique: true});
-users.property('email', {index: true, email: true});
-users.property('name', {});
+// Schema definition
+Users = client.get('users');
+Users.property('id', {identifier: true});
+Users.property('username', {unique: true});
+Users.property('email', {index: true, email: true});
+Users.property('name', {});
+// Record manipulation
+Users.create(
+    {username: 'ron', email: 'ron@domain.com'},
+    function(err, user){
+        console.log(err, user.id);
+    }
+)
 ```
 
 The library provide
 -------------------
 
-*	Simple & tested API
-*   Sortable indexes and unique values
-*   Records are pure object, no extended class, no magic properties
+*	Documented and tested API
+*   Records access with indexes and unique values
+*   Records are pure object, no extended class, no magic
 
 Client API
 ----------
@@ -44,16 +53,23 @@ Client API
 Schema API
 ----------
 
-*   Records::property
+*   Records::email
+*   Records::hash
 *   Records::identifier
 *   Records::index
+*   Records::property
+*   Records::name
+*   Records::serialize
+*   Records::temporal
 *   Records::unique
-*   Records::email
+*   Records::unserialize
+*   Records::validate
 
 Record API
 ----------
 
 *   Records::all
+*   Records::clear
 *   Records::count
 *   Records::create
 *   Records::exists
@@ -66,14 +82,14 @@ Record API
 Run tests
 ---------
 
-Start a redis server (tested against version 2.9.0) on the default port
+Start a redis server on the default port
 ```bash
 redis-server ./conf/redis.conf
 ```
 
-Run the test suite with *expresso*:
+Run the tests with mocha:
 ```bash
-expresso -s
+make test
 ```
 
 
