@@ -59,12 +59,12 @@
             properties: 
                 id: identifier: true
                 username: unique: true
-                email: { index: true, email: true }
+                email: { type: 'email', index: true }
                 name: {}
         # Retrieve properties
         Users.property('id').should.eql { name: 'id', identifier: true, type: 'int' }
         Users.property('username').should.eql { name: 'username', unique: true }
-        Users.property('email').should.eql { name: 'email', index: true, email: true }
+        Users.property('email').should.eql { name: 'email', index: true, type: 'email' }
         Users.property('name').should.eql { name: 'name' }
         client.quit next
 
@@ -74,12 +74,12 @@
         # Define properties
         Users.should.eql Users.property('id', identifier: true)
         Users.should.eql Users.property('username', unique: true)
-        Users.should.eql Users.property('email', { index: true, email: true })
+        Users.should.eql Users.property('email', { index: true, type: 'email' })
         Users.should.eql Users.property('name', {})
         # Retrieve properties
         Users.property('id').should.eql { name: 'id', identifier: true, type: 'int' }
         Users.property('username').should.eql { name: 'username', unique: true }
-        Users.property('email').should.eql { name: 'email', index: true, email: true }
+        Users.property('email').should.eql { name: 'email', index: true, type: 'email' }
         Users.property('name').should.eql { name: 'name' }
         client.quit next
 

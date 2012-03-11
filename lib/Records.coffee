@@ -2,30 +2,25 @@
 Schema = require './Schema'
 
 ###
+
 Records access and manipulation
 ===============================
 
-Implement object based storage with indexing support.
+Implement object based storage with indexing support.   
 
 Identifier
 ----------
 
-Auto generated identifiers are incremented integers. The next identifier is stored in
-a key named as `{s.db}:{s.name}_incr`.
+Auto generated identifiers are incremented integers. The next identifier is obtained from
+a key named as `{s.db}:{s.name}_incr`. All the identifiers are stored as a Redis set in 
+a key named as `{s.db}:{s.name}_#{identifier}`.   
 
 Data
 ----
 
 Records data is stored as a single hash named as `{s.db}:{s.name}:{idenfitier}`. The hash
 keys map to the record properties and the hash value map to the values associated with
-each properties.
-
-Identifiers and unique indexes
-------------------------------
-
-Unique indexes are stored inside a single hash key named as 
-`{s.db}:{s.name}_{property}`. Inside the hash, the hash keys store the unique values 
-associated to the indexed property and the hash values store the record identifiers.
+each properties.   
 
 Regular indexes
 ---------------
@@ -33,7 +28,14 @@ Regular indexes
 Regular index are stored inside multiple sets, named as
 `{s.db}:{s.name}_{property}:{value}`. There is one key for each indexed value and its 
 associated value is a set containing all the identifiers of the records whose property
-match the indexed value.
+match the indexed value.   
+
+Unique indexes
+--------------
+
+Unique indexes are stored inside a single hash key named as 
+`{s.db}:{s.name}_{property}`. Inside the hash, keys are the unique values 
+associated to the indexed property and values are the record identifiers.   
 
 ###
 module.exports = class Records extends Schema
@@ -43,9 +45,10 @@ module.exports = class Records extends Schema
         super ron, schema
     ###
 
-    `all(callback)` Return all records
-    ----------------------------------
-    Similar to the find method with far less options and a faster implementation.
+    `all(callback)`
+    ---------------
+    Return all records. Similar to the find method with far less options 
+    and a faster implementation.   
 
     ###
     all: (callback) ->
@@ -61,17 +64,17 @@ module.exports = class Records extends Schema
                 callback null, records
     ###
 
-    `clear(callback)` Clear all the records
-    ---------------------------------------
+    `clear(callback)`
+    -----------------
     Remove all the records and the references poiting to them. This function
-    takes no other argument than the callback called on error or success.
+    takes no other argument than the callback called on error or success.   
 
     `callback`              Received parameters are:   
 
     *   `err`               Error object if any.   
-    *   `count`             Number of removed records on success 
+    *   `count`             Number of removed records on success   
     
-    Usage:
+    Usage:   
         ron.get('users').clear (err, count) ->
             return console.error "Failed: #{err.message}" if err
             console.log "#{count} records removed"
@@ -125,7 +128,11 @@ module.exports = class Records extends Schema
                 return callback err if err
                 callback null, count
     ###
-    Count the number of records present in the database.
+
+    `count(callback)`
+    -----------------
+    Count the number of records present in the database.   
+
     ###
     count: (callback) ->
         {redis} = @
@@ -134,17 +141,18 @@ module.exports = class Records extends Schema
             return callback err if err
             callback null, count
     ###
-    `create(records, [options], callback)` Create new records
-    ----------------------------------------------
-    Take a record object or multiple records and insert them. The records must not 
-    exists in the database or an error will be returned in the callback. The records objects
+
+    `create(records, [options], callback)`
+    --------------------------------------
+    Insert one or multiple record. The records must not already exists 
+    in the database or an error will be returned in the callback. The records objects
     passed in the function are returned in the callback with their new identifier property.
 
-    `records`               Record object or array of record objects.
+    `records`               Record object or array of record objects.   
 
     `options`               Options properties include:   
 
-    *   `identifiers`       Return only the created identifiers instead of the records.
+    *   `identifiers`       Return only the created identifiers instead of the records.   
     *   `validate`          Validate the records.   
     *   `properties`        Array of properties to be returned.   
     *   `milliseconds`      Convert date value to milliseconds timestamps instead of `Date` objects.   
@@ -153,10 +161,10 @@ module.exports = class Records extends Schema
     `callback`              Called on success or failure. Received parameters are:   
 
     *   `err`               Error object if any.   
-    *   `records`           Records with their newly created identifier.
+    *   `records`           Records with their newly created identifier.   
 
     Records are not validated, it is the responsability of the client program calling `create` to either
-    call `validate` before calling `create` or to passs the `validate` options.
+    call `validate` before calling `create` or to passs the `validate` options.   
 
     ###
     create: (records, options, callback) ->
@@ -220,19 +228,21 @@ module.exports = class Records extends Schema
                     callback null, if isArray then records else records[0]
     ###
     
-    `exists(records, callback)` Check if one or more record exist
-    -------------------------------------------------------------
-    The existence of a record is based on its id or any property defined as unique.
-    The provided callback is called with an error or the records identifiers. The 
-    identifiers respect the same structure as the provided records argument. If a 
-    record does not exists, its associated return value is null.
+    `exists(records, callback)`
+    ---------------------------
+    Check if one or more record exist. The existence of a record is based on its 
+    id or any property defined as unique. The provided callback is called with 
+    an error or the records identifiers. The identifiers respect the same 
+    structure as the provided records argument. If a record does not exists, 
+    its associated return value is null.   
 
-    `records`               Record object or array of record objects.
+    `records`               Record object or array of record objects.   
 
     `callback`              Called on success or failure. Received parameters are:   
 
     *   `err`               Error object if any.   
-    *   `identifier`        Record identifiers or null values.
+    *   `identifier`        Record identifiers or null values.   
+
     ###
     exists: (records, callback) ->
         {redis} = @
@@ -257,11 +267,12 @@ module.exports = class Records extends Schema
             callback null, if isArray then recordIds else recordIds[0]
     ###
 
-    `get(records, [options], callback)` Retrieve one or multiple records
-    --------------------------------------------------------------------
-    If options is an array, it is considered to be the list of properties to 
-    retrieve. By default, unless the `force` option is defined, only the properties
-    not yet defined in the provided records are fetch from Redis.   
+    `get(records, [options], callback)`
+    -----------------------------------
+    Retrieve one or multiple records. If options is an array, it is considered 
+    to be the list of properties to retrieve. By default, unless the `force` 
+    option is defined, only the properties not yet defined in the provided 
+    records are fetch from Redis.   
 
     `options`               All options are optional. Options properties include:   
     
@@ -271,7 +282,7 @@ module.exports = class Records extends Schema
 
     `callback`              Called on success or failure. Received parameters are:   
 
-    *   `err`               Error object if the command failed   
+    *   `err`               Error object if the command failed.   
     *   `records`           Object or array of object if command succeed. Objects are null if records are not found.   
     
     ###
@@ -318,29 +329,23 @@ module.exports = class Records extends Schema
                 @unserialize records
                 callback null, if isArray then records else records[0]
     ###
-    id(records, [options], callback)
-    --------------------------------
-    Extract record identifiers or set the identifier to null if its associated record could not be found.
+
+    `id(records, [options], callback)`
+    ----------------------------------
+    Extract record identifiers or set the identifier to null if its associated record could not be found.   
 
     The method doesn't hit the database to validate record values and if an id is 
     provided, it wont check its existence. When a record has no identifier but a unique value, then its
-    identifier will be fetched from Redis. 
-    
-    
-    todo: With no argument, generate an new id
-    todo: IF first argument is a number, genererate the number of new id
-    If first argument is an object or an array of object, extract the id from those objects
+    identifier will be fetched from Redis.   
 
-    The id will be set to null if the record wasn't discovered in the database
-
-    `records`               Record object or array of record objects.
+    `records`               Record object or array of record objects.   
 
     `options`               Options properties include:   
 
     *   `accept_null`       Skip objects if they are provided as null.   
     *   `object`            Return an object in the callback even if it recieve an id instead of a record.   
 
-    Use reverse index lookup to extract user ids:
+    Use reverse index lookup to extract user ids:   
 
         Users.get 'users', properties:
             user_id: identifier: true
@@ -352,7 +357,7 @@ module.exports = class Records extends Schema
             should.not.exist err
             console.log ids
 
-    Use the `object` option to return records instead of ids:
+    Use the `object` option to return records instead of ids:   
 
         Users.get 'users', properties:
             user_id: identifier: true
@@ -416,14 +421,14 @@ module.exports = class Records extends Schema
 
     `list([options], callback)`
     ---------------------------
-    List records with support for filtering and sorting.
+    List records with support for filtering and sorting.   
 
     `options`               Options properties include:   
 
-    *   `where`
-    *   `operation`
-    *   `sort`
-    *   `direction`
+    *   `where`             Hash of property/value used to filter the query.   
+    *   `operation`         Redis operation in case of multiple `where` properties, default to `union`.   
+    *   `sort`              Name of the property by which records should be ordered.   
+    *   `direction`         One of `asc` or `desc`, default to `asc`.   
     *   `properties`        Array of properties to be returned.   
     *   `milliseconds`      Convert date value to milliseconds timestamps instead of `Date` objects.   
     *   `seconds`           Convert date value to seconds timestamps instead of `Date` objects.   
@@ -431,7 +436,7 @@ module.exports = class Records extends Schema
     `callback`              Called on success or failure. Received parameters are:   
 
     *   `err`               Error object if any.   
-    *   `records`           Records fetched from Redis.
+    *   `records`           Records fetched from Redis.   
 
     Using the `union` operation:   
 
@@ -517,10 +522,11 @@ module.exports = class Records extends Schema
         multi.del tempkey if tempkey
         multi.exec()
     ###
-    Remove one or several records
-    -----------------------------
-    Take one or multiple records and remove them from the database as 
-    well as all the indexes referencing those records.
+
+    `remove(records, callback)`
+    ---------------------------
+    Remove one or several records from the database. The function will also 
+    handle all the indexes referencing those records.   
     
     ###
     remove: (records, callback) ->
@@ -549,13 +555,13 @@ module.exports = class Records extends Schema
                 callback null, records.length
     ###
 
-    `update(records, [options], callback)` Update one or several records
-    --------------------------------------------------------------------
-    Take a record object or multiple records and insert them. The records must 
-    exists in the database or an error will be returned in the callback. The existence 
-    of a record may be discovered through its identifier or the presence of a unique property.   
+    `update(records, [options], callback)` 
+    --------------------------------------
+    Update one or several records. The records must exists in the database or 
+    an error will be returned in the callback. The existence of a record may 
+    be discovered through its identifier or the presence of a unique property.   
 
-    `records`               Record object or array of record objects.
+    `records`               Record object or array of record objects.   
 
     `options`               Options properties include:   
 
@@ -564,12 +570,13 @@ module.exports = class Records extends Schema
     `callback`              Called on success or failure. Received parameters are:   
 
     *   `err`               Error object if any.   
-    *   `records`           Records with their newly created identifier.
+    *   `records`           Records with their newly created identifier.   
 
     Records are not validated, it is the responsability of the client program calling `create` to either
-    call `validate` before calling `create` or to passs the `validate` options.
+    call `validate` before calling `create` or to passs the `validate` options.   
     
-    Updating a single record
+    Updating a single record:   
+
         Users.update
             username: 'my_username'
             age: 28

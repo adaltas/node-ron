@@ -25,7 +25,7 @@ client = ron({
 Users = client.get('users');
 Users.property('id', {identifier: true});
 Users.property('username', {unique: true});
-Users.property('email', {index: true, email: true});
+Users.property('email', {index: true, type: 'email'});
 Users.property('name', {});
 // Record manipulation
 Users.create(
@@ -41,43 +41,42 @@ The library provide
 
 *	Documented and tested API
 *   Records access with indexes and unique values
-*   Records are pure object, no extended class, no magic
+*   Records are pure object, no state, no magic
 
 Client API
 ----------
 
-*   Client::constructor
-*   Client::quit
-*   Client::define
+*   [Client::constructor](http://www.adaltas.com/projects/node-ron/client.html#ron)
+*   [Client::get](http://www.adaltas.com/projects/node-ron/client.html#get)
+*   [Client::quit](http://www.adaltas.com/projects/node-ron/client.html#quit)
 
 Schema API
 ----------
 
-*   Records::email
-*   Records::hash
-*   Records::identifier
-*   Records::index
-*   Records::property
-*   Records::name
-*   Records::serialize
-*   Records::temporal
-*   Records::unique
-*   Records::unserialize
-*   Records::validate
+*   [Records::hash](http://www.adaltas.com/projects/node-ron/schema.html#hash)
+*   [Records::identifier](http://www.adaltas.com/projects/node-ron/schema.html#identifier)
+*   [Records::index](http://www.adaltas.com/projects/node-ron/schema.html#index)
+*   [Records::property](schema.html#property)
+*   [Records::name](http://www.adaltas.com/projects/node-ron/schema.html#name)
+*   [Records::serialize](http://www.adaltas.com/projects/node-ron/schema.html#serialize)
+*   [Records::temporal](http://www.adaltas.com/projects/node-ron/schema.html#temporal)
+*   [Records::unique](http://www.adaltas.com/projects/node-ron/schema.html#unique)
+*   [Records::unserialize](http://www.adaltas.com/projects/node-ron/schema.html#unserialize)
+*   [Records::validate](http://www.adaltas.com/projects/node-ron/schema.html#validate)
 
-Record API
-----------
+Records API
+-----------
 
-*   Records::all
-*   Records::clear
-*   Records::count
-*   Records::create
-*   Records::exists
-*   Records::get
-*   Records::id
-*   Records::list
-*   Records::remove
-*   Records::update
+*   [Records::all](http://www.adaltas.com/projects/node-ron/records.html#all)
+*   [Records::clear](http://www.adaltas.com/projects/node-ron/records.html#clear)
+*   [Records::count](http://www.adaltas.com/projects/node-ron/records.html#count)
+*   [Records::create](http://www.adaltas.com/projects/node-ron/records.html#create)
+*   [Records::exists](http://www.adaltas.com/projects/node-ron/records.html#exists)
+*   [Records::get](http://www.adaltas.com/projects/node-ron/records.html#get)
+*   [Records::id](http://www.adaltas.com/projects/node-ron/records.html#id)
+*   [Records::list](http://www.adaltas.com/projects/node-ron/records.html#list)
+*   [Records::remove](http://www.adaltas.com/projects/node-ron/records.html#remove)
+*   [Records::update](http://www.adaltas.com/projects/node-ron/records.html#update)
 
 Run tests
 ---------

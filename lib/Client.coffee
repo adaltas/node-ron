@@ -4,12 +4,14 @@ Schema = require './Schema'
 Records = require './Records'
 
 ###
-Ron client
-==========
+
+Client connection
+=================
+
 The client wraps a redis connection and provides access to records definition 
 and manipulation.
 
-Internall, Ron rely on the [Redis client for Node.js](https://github.com/mranney/node_redis).
+Internally, Ron use the [Redis client for Node.js](https://github.com/mranney/node_redis).
 
 ###
 module.exports = class Client
@@ -23,10 +25,10 @@ module.exports = class Client
 
     *   `name`              A namespace for the application, all keys with be prefixed with "#{name}:". Default to "ron"   
     *   `redis`             Provide an existing instance in case you don't want a new one to be created.   
-    *   `host`        Redis database hostname.   
-    *   `port`        Redis database port.   
-    *   `password`    Redis databse password.   
-    *   `database`    Integer defining the redis database.   
+    *   `host`              Redis hostname.   
+    *   `port`              Redis port.   
+    *   `password`          Redis password.   
+    *   `database`          Redis database (an integer).   
 
     Basic example:
         ron = require 'ron'

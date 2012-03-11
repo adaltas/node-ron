@@ -5,8 +5,12 @@ isEmail = (email) ->
     /^[a-z0-9,!#\$%&'\*\+\/\=\?\^_`\{\|}~\-]+(\.[a-z0-9,!#\$%&'\*\+\/\=\?\^_`\{\|}~\-]+)*@[a-z0-9\-]+(\.[a-z0-9\-]+)*\.([a-z]{2,})$/.test(email)
 
 ###
+
 Schema definition
 =================
+
+A schema is defined once and must no change. We dont support schema migration at the moment. The `Records`
+class inherit all the properties and method of the shema.
 
 `ron`                   Reference to the Ron instance   
 
@@ -21,20 +25,23 @@ Record properties may be defined by the following keys:
 *   `identifier`        Mark this property as the identifier, only one property may be an identifier.   
 *   `index`             Create an index on the property.   
 *   `unique`            Create a unique index on the property.   
-*   `email`             Validate the string as an email.   
 *   `temporal`          Add creation and modification date transparently.   
 
-Sample
-------
+Define a schema from a configuration object:   
 
-    ron.get 
-        name: 'users'
-        properties: 
-            user_id: identifier: true
-            username: unique: true
-            password: true
+    ron.get 'users', properties: 
+        user_id: identifier: true
+        username: unique: true
+        password: true
 
-and then you can manipulate your records
+Define a schema with a declarative approach:   
+
+    Users = ron.get 'users'
+    Users.indentifier 'user_id'
+    Users.unique 'username'
+    Users.property 'password'
+
+Whichever your style, you can then manipulate your records:   
 
     users = ron.get 'users'
     users.list (err, users) -> console.log users
@@ -53,51 +60,30 @@ module.exports = class Schema
             identifier: null
             index: {}
             unique: {}
-            email: {}
         if options.temporal
             @temporal options.temporal
         if options.properties
             for name, value of options.properties
                 @property name, value
     ###
-    Define property as en email
-    ---------------------------
-    Check that a property validate as an email
-    
-    Calling this function without any argument will return all the email
-    properties.
-    
-    Example:
-        User.unique 'username'
-        User.get { username: 'me' }, (err, user) ->
-            console.log "This is #{user.username}"
-    ###
-    email: (property) ->
-        # Set the property
-        if property?
-            @data.properties[property] = {} unless @data.properties[property]?
-            @data.properties[property].email = true
-            @data.email[property] = true
-            @
-        # Get the property
-        else
-            @data.email
-    ###
-    Hash a key
-    ----------
-    This is a utility function used when redis key are created out of 
-    uncontrolled values.
+
+    `hash(key)`
+    -------------
+    Utility function used when a redis key is created out of 
+    uncontrolled character (like a string instead of an int).
+
     ###
     hash: (key) ->
         key = "#{key}" if typeof key is 'number'
         return if key? then crypto.createHash('sha1').update(key).digest('hex') else 'null'
     ###
-    Define a property as an identifier
-    ----------------------------------
-    An identifier is a property which uniquely define a record.
-    Internaly, those type of property are stored in set.
-    
-    Calling this function without any argument will return the identifier if any.
+
+    `identifier(property)`
+    ------------------------
+    Define a property as an identifier or return the record identifier if
+    called without any arguments. An identifier is a property which uniquely 
+    define a record. Inside Redis, identifier values are stored in set.   
+
     ###
     identifier: (property) ->
         # Set the property
@@ -111,21 +97,24 @@ module.exports = class Schema
         else
             @data.identifier
     ###
-    Define a property as indexable or return all index properties
-    -------------------------------------------------------------
-    An indexed property allow records access by its property value. For example,
+
+    `index([property])`
+    -------------------
+    Define a property as indexable or return all index properties. An 
+    indexed property allow records access by its property value. For example,
     when using the `list` function, the search can be filtered such as returned
-    records match one or multiple values.
+    records match one or multiple values.   
     
     Calling this function without any argument will return an array with all the 
-    indexed properties.
+    indexed properties.   
     
-    Example:
+    Example:   
         User.index 'email'
         User.list { filter: { email: 'my@email.com' } }, (err, users) ->
             console.log 'This user has the following accounts:'
             for user in user
                 console.log "- #{user.username}"
+
     ###
     index: (property) ->
         # Set the property
@@ -138,22 +127,24 @@ module.exports = class Schema
         else
             Object.keys(@data.index)
     ###
-    Retrieve/define a new property
+
+    `property(property, [schema])`
     ------------------------------
     Define a new property or overwrite the definition of an
     existing property. If no schema is provide, return the
-    property information.
+    property information.   
     
     Calling this function with only the property argument will return the schema
-    information associated with the property.
+    information associated with the property.   
     
     It is possible to define a new property without any schema information by 
-    providing an empty object.
+    providing an empty object.   
     
-    Example:
+    Example:   
+
         User.property 'id', identifier: true
         User.property 'username', unique: true
-        User.property 'email', { index: true, email: true }
+        User.property 'email', { index: true, type: 'email' }
         User.property 'name', {}
 
     ###
@@ -165,7 +156,6 @@ module.exports = class Schema
             @identifier property if schema.identifier
             @index property if schema.index
             @unique property if schema.unique
-            @email property if schema.email
             @
         else
             @data.properties[property]
@@ -212,10 +202,12 @@ module.exports = class Schema
                             record[property] = value.getTime()
         if isArray then records else records[0]
     ###
-    `temporal([options])` Define or retrieve temporal definition
-    ------------------------------------------------------------
-    Marking a schema as temporal will transparently add two new date properties,
-    the date when the record was created (by default "creation"), and the date 
+
+    `temporal([options])` 
+    ---------------------
+    Define or retrieve temporal definition. Marking a schema as 
+    temporal will transparently add two new date properties, the 
+    date when the record was created (by default "creation"), and the date 
     when the record was last updated (by default "modification").
 
     ###
@@ -231,18 +223,20 @@ module.exports = class Schema
         else 
             [ @data.temporal.creation, @data.temporal. modification ]
     ###
-    Define a property as unique
-    ---------------------------
-    An unique property is similar to a unique one but,... unique. In addition for
-    being filterable, it could also be used as an identifer to access a record.
+
+    `unique([property])`
+    --------------------
+    Define a property as unique or retrieve all the unique properties if no 
+    argument is provided. An unique property is similar to a index
+    property but the index is stored inside a Redis hash. In addition to being 
+    filterable, it could also be used as an identifer to access a record.
     
-    Calling this function without any argument will return an arrya with all the 
-    unique properties.
-    
-    Example:
+    Example:   
+
         User.unique 'username'
         User.get { username: 'me' }, (err, user) ->
             console.log "This is #{user.username}"
+
     ###
     unique: (property) ->
         # Set the property
@@ -300,19 +294,19 @@ module.exports = class Schema
         if isArray then records else records[0]
     ###
 
-    `validate(records, [options])` Validate
-    ---------------------------------------
+    `validate(records, [options])`
+    ------------------------------
     Validate the properties of one or more records. Return a validation 
     object or an array of validation objects depending on the provided 
     records arguments. Keys of a validation object are the name of the invalid 
-    properties and their value is a string indicating the type of error.
+    properties and their value is a string indicating the type of error.   
 
-    `records`               Record object or array of record objects.
+    `records`               Record object or array of record objects.   
 
     `options`               Options include:   
 
     *   `throw`             Throw errors on first invalid property instead of returning a validation object.   
-    *   `skip_required`     Doesn't validate missing properties defined as `required`, usefull for partial update.
+    *   `skip_required`     Doesn't validate missing properties defined as `required`, usefull for partial update.   
 
     ###
     validate: (records, options = {}) ->

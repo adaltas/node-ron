@@ -18,6 +18,8 @@
         "redis": "latest"
     },
     "devDependencies": {
+        "each": "latest",
+        "mecano": "latest",
         "mocha": "latest",
         "should": "latest"
     },
