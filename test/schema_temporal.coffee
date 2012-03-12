@@ -26,8 +26,8 @@ describe 'type', ->
         Records.clear (err) ->
             Records.create {}, (err, record) ->
                 should.not.exist err
-                record.creation.should.be.an.instanceof Date
-                record.modification.should.be.an.instanceof Date
+                record.cdate.should.be.an.instanceof Date
+                record.mdate.should.be.an.instanceof Date
                 next()
 
     it 'should deal with update', (next) ->
@@ -39,10 +39,10 @@ describe 'type', ->
         date = new Date Date.UTC 2008, 8, 10, 16, 5, 10
         Records.clear (err) ->
             Records.create {}, (err, record) ->
-                creation = record.creation
+                cdate = record.cdate
                 Records.update record, (err, record) ->
                     should.not.exist err
-                    record.creation.should.be.an.instanceof Date
-                    record.creation.should.eql creation
-                    record.modification.should.be.an.instanceof Date
+                    record.cdate.should.be.an.instanceof Date
+                    record.cdate.should.eql cdate
+                    record.mdate.should.be.an.instanceof Date
                     next()

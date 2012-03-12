@@ -207,21 +207,21 @@ module.exports = class Schema
     ---------------------
     Define or retrieve temporal definition. Marking a schema as 
     temporal will transparently add two new date properties, the 
-    date when the record was created (by default "creation"), and the date 
-    when the record was last updated (by default "modification").
+    date when the record was created (by default "cdate"), and the date 
+    when the record was last updated (by default "mdate").
 
     ###
     temporal: (temporal) ->
         if temporal?
             if temporal is true
                 temporal = 
-                    creation: 'creation'
-                    modification: 'modification'
+                    creation: 'cdate'
+                    modification: 'mdate'
             @data.temporal = temporal
             @property temporal.creation, type: 'date'
             @property temporal.modification, type: 'date'
         else 
-            [ @data.temporal.creation, @data.temporal. modification ]
+            [ @data.temporal.creation, @data.temporal.modification ]
     ###
 
     `unique([property])`
