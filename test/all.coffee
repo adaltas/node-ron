@@ -27,16 +27,14 @@ describe 'all', ->
     it 'shall create 2 users and list them', (next) ->
         Users.create [
             username: 'my_username_1',
-            email: 'my_first@email.com',
-            password: 'my_password'
+            email: 'my_first@email.com'
         ,
             username: 'my_username_2',
-            email: 'my_second@email.com',
-            password: 'my_password'
+            email: 'my_second@email.com'
         ], (err, users) ->
             Users.all (err, users) ->
                 should.not.exist err
                 users.length.should.eql 2
-                users[0].password.should.eql 'my_password'
+                for user in users then user.username.should.match /^my_/
                 next()
         

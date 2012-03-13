@@ -22,7 +22,7 @@ describe 'count', ->
     after (next) ->
         client.quit next
 
-    it 'Test count', (next) ->
+    it 'should count the records', (next) ->
         Users.create [
             username: '1my_username',
             email: '1my@email.com',

@@ -145,8 +145,10 @@ module.exports = class Records extends Schema
     `create(records, [options], callback)`
     --------------------------------------
     Insert one or multiple record. The records must not already exists 
-    in the database or an error will be returned in the callback. The records objects
-    passed in the function are returned in the callback with their new identifier property.
+    in the database or an error will be returned in the callback. Only
+    the defined properties are inserted.
+
+    The records passed to the function are returned in the callback enriched their new identifier property.
 
     `records`               Record object or array of record objects.   
 
@@ -212,8 +214,10 @@ module.exports = class Records extends Schema
                         #multi.zadd "#{s.db}:#{s.name}_#{property}", 0, record[property]
                     # Store the record
                     r = {}
-                    # Filter null values
                     for property, value of record
+                        # Insert only defined properties
+                        continue unless properties[property]
+                        # Filter null values
                         r[property] = value if value?
                     @serialize r
                     multi.hmset "#{db}:#{name}:#{recordId}", r

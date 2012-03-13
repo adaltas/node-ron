@@ -113,5 +113,16 @@ describe 'create', ->
             for user in users then Object.keys(user).should.eql ['email']
             Users.clear next
 
+    it 'should only insert defined properties', (next) ->
+        Users.create
+            username: 'my_username_1',
+            email: 'my_first@email.com',
+            password: 'my_password'
+            zombie: 'e.t. maison'
+        , (err, user) ->
+            Users.get user.user_id, (err, user) ->
+                should.not.exist user.zombie
+                Users.clear next
+
 
 
