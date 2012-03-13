@@ -26,7 +26,7 @@ describe 'get', ->
 
     it 'Test get # identifier', (next) ->
         Users.create
-            username: 'my_username',
+            username: 'my_username'
             email: 'my@email.com'
         , (err, user) ->
             userId = user.user_id
@@ -44,7 +44,7 @@ describe 'get', ->
 
     it 'Test get # unique property', (next) ->
         Users.create
-            username: 'my_username',
+            username: 'my_username'
             email: 'my@email.com'
         , (err, user) ->
             userId = user.user_id
@@ -61,8 +61,8 @@ describe 'get', ->
 
     it 'Test get # properties', (next) ->
         Users.create
-            username: 'my_username',
-            email: 'my@email.com',
+            username: 'my_username'
+            email: 'my@email.com'
         , (err, user) ->
             userId = user.user_id
             Users.get userId, ['username'], (err, user) ->
@@ -95,6 +95,20 @@ describe 'get', ->
                         users[1].username.should.eql 'my_username'
                         should.not.exist users[2]
                         Users.clear next
+
+    it 'should return an object where keys are the identifiers with option `object`', (next) ->
+        Users.create [
+            username: 'username_1'
+        ,
+            username: 'username_2'
+        ,
+            username: 'username_3'
+        ], identifiers: true, (err, ids) ->
+            Users.get ids, object: true, (err, users) ->
+                Object.keys(users).length.should.eql 3
+                for id, user of users then id.should.eql "#{user.user_id}"
+                Users.clear next
+
 
 
 

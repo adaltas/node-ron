@@ -316,6 +316,7 @@ module.exports = class Records extends Schema
     *   `properties`        Array of properties to fetch, all properties if not defined.   
     *   `force`             Force the retrieval of properties even if already present in the record objects.   
     *   `accept_null`       Skip objects if they are provided as null.   
+    *   `object`            If `true`, return an object where keys are the identifier and value are the fetched records
 
     `callback`              Called on success or failure. Received parameters are:   
 
@@ -364,7 +365,13 @@ module.exports = class Records extends Schema
             multi.exec (err, values) =>
                 return callback err if err
                 @unserialize records
-                callback null, if isArray then records else records[0]
+                if options.object
+                    recordsByIds = {}
+                    for record in records
+                        recordsByIds[record[identifier]] = record
+                    callback null, recordsByIds
+                else
+                    callback null, if isArray then records else records[0]
     ###
 
     `id(records, [options], callback)`
