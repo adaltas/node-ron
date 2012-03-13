@@ -133,13 +133,27 @@ module.exports = class Records extends Schema
     -----------------
     Count the number of records present in the database.   
 
+    `count(property, value, callback)`
+    ----------------------------------
+    Count the number of values for an indexed property.   
+
     ###
     count: (callback) ->
         {redis} = @
-        {db, name, identifier} = @data
-        @redis.scard "#{db}:#{name}_#{identifier}", (err, count) ->
-            return callback err if err
-            callback null, count
+        {db, name, identifier, index} = @data
+        if arguments.length is 3
+            property = callback
+            value = arguments[1]
+            callback = arguments[2]
+            return callback new Error "Property is not indexed" unless index[property]
+            value = @hash value
+            @redis.scard "#{db}:#{name}_#{property}:#{value}", (err, count) ->
+                return callback err if err
+                callback null, count
+        else
+            @redis.scard "#{db}:#{name}_#{identifier}", (err, count) ->
+                return callback err if err
+                callback null, count
     ###
 
     `create(records, [options], callback)`

@@ -36,3 +36,23 @@ describe 'count', ->
                 should.not.exist err
                 count.should.eql 2
                 next()
+
+    it 'should count the index elements of a property', (next) ->
+        Users.create [
+            username: 'username_1',
+            email: 'my@email.com',
+            password: 'my_password'
+        ,
+            username: 'username_2',
+            email: 'my_2@email.com',
+            password: 'my_password'
+        ,
+            username: 'username_3',
+            email: 'my@email.com',
+            password: 'my_password'
+        ], (err, user) ->
+            Users.count 'email', 'my@email.com', (err, count) ->
+                should.not.exist err
+                count.should.eql 2
+                next()
+
