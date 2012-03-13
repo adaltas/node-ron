@@ -131,11 +131,25 @@ module.exports = class Records extends Schema
 
     `count(callback)`
     -----------------
-    Count the number of records present in the database.   
+    Count the number of records present in the database.    
 
-    `count(property, value, callback)`
+    Counting all the records:   
+
+        Users.count, (err, count) ->
+            console.log 'count users', count
+
+    `count(property, values, callback)`
     ----------------------------------
-    Count the number of values for an indexed property.   
+    Count the number of one or more values for an indexed property.  
+
+    Counting multiple values:   
+
+        Users.get 'users', properties:
+            user_id: identifier: true
+            job: index: true
+        Users.count 'job' [ 'globtrotter', 'icemaker' ], (err, counts) ->
+            console.log 'count globtrotter', counts[0]
+            console.log 'count icemaker', counts[1]
 
     ###
     count: (callback) ->
@@ -143,13 +157,18 @@ module.exports = class Records extends Schema
         {db, name, identifier, index} = @data
         if arguments.length is 3
             property = callback
-            value = arguments[1]
+            values = arguments[1]
             callback = arguments[2]
             return callback new Error "Property is not indexed" unless index[property]
-            value = @hash value
-            @redis.scard "#{db}:#{name}_#{property}:#{value}", (err, count) ->
+            isArray = Array.isArray values
+            values = [values] unless isArray
+            multi = redis.multi()
+            for value, i  in values
+                value = @hash value
+                multi.scard "#{db}:#{name}_#{property}:#{value}"
+            multi.exec (err, counts) ->
                 return callback err if err
-                callback null, count
+                callback null, if isArray then counts else counts[0]
         else
             @redis.scard "#{db}:#{name}_#{identifier}", (err, count) ->
                 return callback err if err

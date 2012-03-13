@@ -51,8 +51,14 @@ describe 'count', ->
             email: 'my@email.com',
             password: 'my_password'
         ], (err, user) ->
+            # Count one value
             Users.count 'email', 'my@email.com', (err, count) ->
                 should.not.exist err
                 count.should.eql 2
-                next()
+                # Count multiple values
+                Users.count 'email', ['my@email.com', 'my_2@email.com'], (err, counts) ->
+                    should.not.exist err
+                    counts[0].should.eql 2
+                    counts[1].should.eql 1
+                    next()
 
