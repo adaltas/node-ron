@@ -9,7 +9,8 @@ isEmail = (email) ->
 Schema definition
 =================
 
-A schema is defined once and must no change. We dont support schema migration at the moment. The `Records`
+Schema is a mixin from which `Records` inherits. A schema is defined once 
+and must no change. We dont support schema migration at the moment. The `Records`
 class inherit all the properties and method of the shema.
 
 `ron`                   Reference to the Ron instance   

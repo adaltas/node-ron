@@ -223,17 +223,9 @@ module.exports = class Records extends Schema
             # Get current date once if schema is temporal
             date = new Date Date.now() if temporal?
             # Generate new identifiers
-            incr = 0
-            for record in records then incr++ unless record[identifier]
-            multi.incrby "#{db}:#{name}_incr", incr
-            multi.exec (err, recordId) =>
-                recordId = recordId - incr
-                return callback err if err
+            @id records, (err, records) =>
                 multi = redis.multi()
                 for record, i in records
-                    recordId++ unless record[identifier]
-                    # Enrich the record with its identifier
-                    record[identifier] = recordId unless record[identifier]
                     # Enrich the record with a creation date
                     record[temporal.creation] = date if temporal?.creation? and not record[temporal.creation]?
                     # Enrich the record with a creation date
@@ -376,6 +368,34 @@ module.exports = class Records extends Schema
                     callback null, recordsByIds
                 else
                     callback null, if isArray then records else records[0]
+    ###
+    `id(records, callback)`
+    -----------------------
+    Generate new identifiers. The first arguments `records` may be the number
+    of ids to generate, a record or an array of records.
+
+    ###
+    id: (records, callback) ->
+        {redis} = @
+        {db, name, identifier, unique} = @data
+        if typeof records is 'number'
+            incr = records
+            isArray = true
+            records = for i in [0...records] then null
+        else
+            isArray = Array.isArray records
+            records = [records] unless isArray
+            incr = 0
+            for record in records then incr++ unless record[identifier]
+        redis.incrby "#{db}:#{name}_incr", incr, (err, recordId) =>
+            recordId = recordId - incr
+            return callback err if err
+            for record, i in records
+                records[i] = record = {} unless record
+                recordId++ unless record[identifier]
+                # Enrich the record with its identifier
+                record[identifier] = recordId unless record[identifier]
+            callback null, if isArray then records else records[0]
     ###
 
     `identify(records, [options], callback)`
