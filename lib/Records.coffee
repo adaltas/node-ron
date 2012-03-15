@@ -223,27 +223,31 @@ module.exports = class Records extends Schema
             # Get current date once if schema is temporal
             date = new Date Date.now() if temporal?
             # Generate new identifiers
-            multi.incr "#{db}:#{name}_incr" for x in records
-            multi.exec (err, recordIds) =>
+            incr = 0
+            for record in records then incr++ unless record[identifier]
+            multi.incrby "#{db}:#{name}_incr", incr
+            multi.exec (err, recordId) =>
+                recordId = recordId - incr
                 return callback err if err
                 multi = redis.multi()
                 for record, i in records
+                    recordId++ unless record[identifier]
                     # Enrich the record with its identifier
-                    record[identifier] = recordId = recordIds[i]
+                    record[identifier] = recordId unless record[identifier]
                     # Enrich the record with a creation date
                     record[temporal.creation] = date if temporal?.creation? and not record[temporal.creation]?
                     # Enrich the record with a creation date
                     record[temporal.modification] = date if temporal?.modification? and not record[temporal.modification]?
                     # Register new identifier
-                    multi.sadd "#{db}:#{name}_#{identifier}", recordId
+                    multi.sadd "#{db}:#{name}_#{identifier}", record[identifier]
                     # Deal with Unique
                     for property of unique
-                        multi.hset "#{db}:#{name}_#{property}", record[property], recordId if record[property]
+                        multi.hset "#{db}:#{name}_#{property}", record[property], record[identifier] if record[property]
                     # Deal with Index
                     for property of index
                         value = record[property]
                         value = hash value
-                        multi.sadd "#{db}:#{name}_#{property}:#{value}", recordId
+                        multi.sadd "#{db}:#{name}_#{property}:#{value}", record[identifier]
                         #multi.zadd "#{s.db}:#{s.name}_#{property}", 0, record[property]
                     # Store the record
                     r = {}
@@ -253,7 +257,7 @@ module.exports = class Records extends Schema
                         # Filter null values
                         r[property] = value if value?
                     @serialize r
-                    multi.hmset "#{db}:#{name}:#{recordId}", r
+                    multi.hmset "#{db}:#{name}:#{record[identifier]}", r
                 multi.exec (err, results) =>
                     return callback err if err
                     for result in results
@@ -313,7 +317,7 @@ module.exports = class Records extends Schema
 
     `options`               All options are optional. Options properties include:   
     
-    *   `properties`        Array of properties to fetch, all properties if not defined.   
+    *   `properties`        Array of properties to fetch, all properties unless defined.   
     *   `force`             Force the retrieval of properties even if already present in the record objects.   
     *   `accept_null`       Skip objects if they are provided as null.   
     *   `object`            If `true`, return an object where keys are the identifier and value are the fetched records
@@ -338,7 +342,7 @@ module.exports = class Records extends Schema
         if options.accept_null? and not records.some((record) -> record isnt null)
             return callback null, if isArray then records else records[0]
         # Retrieve records identifiers
-        @id records, {object: true, accept_null: options.accept_null?}, (err, records) =>
+        @identify records, {object: true, accept_null: options.accept_null?}, (err, records) =>
             return callback err if err
             cmds = []
             records.forEach (record, i) ->
@@ -374,8 +378,8 @@ module.exports = class Records extends Schema
                     callback null, if isArray then records else records[0]
     ###
 
-    `id(records, [options], callback)`
-    ----------------------------------
+    `identify(records, [options], callback)`
+    ----------------------------------------
     Extract record identifiers or set the identifier to null if its associated record could not be found.   
 
     The method doesn't hit the database to validate record values and if an id is 
@@ -414,7 +418,7 @@ module.exports = class Records extends Schema
             console.log ids
 
     ###
-    id: (records, options, callback) ->
+    identify: (records, options, callback) ->
         if arguments.length is 2
             callback = options
             options = {}
@@ -447,20 +451,19 @@ module.exports = class Records extends Schema
                 records[i][identifier] = record
             else
                 return callback new Error 'Invalid id, got ' + (JSON.stringify record)
-        # No need to hit redis if no comand are registered
-        if cmds.length is 0
-            if not options.object
+        finalize = ->
+            unless options.object
                 records = for record in records
                     if record? then record[identifier] else record
-            return callback null, if isArray then records else records[0]
+            callback null, if isArray then records else records[0]
+        # No need to hit redis if there is no command
+        return finalize() if cmds.length is 0
         # Run the commands
         multi = redis.multi cmds
         multi.exec (err, results) =>
-            unless options.object
-                records = for record in records
-                    record[identifier]
+            return callback err if err
             @unserialize records
-            callback null, if isArray then records else records[0]
+            finalize()
     ###
 
     `list([options], callback)`
@@ -566,7 +569,7 @@ module.exports = class Records extends Schema
         multi.del tempkey if tempkey
         multi.exec()
     ###
-
+    
     `remove(records, callback)`
     ---------------------------
     Remove one or several records from the database. The function will also 
@@ -598,24 +601,24 @@ module.exports = class Records extends Schema
                 return callback err if err
                 callback null, records.length
     ###
-
+    
     `update(records, [options], callback)` 
     --------------------------------------
     Update one or several records. The records must exists in the database or 
     an error will be returned in the callback. The existence of a record may 
     be discovered through its identifier or the presence of a unique property.   
-
+    
     `records`               Record object or array of record objects.   
-
+    
     `options`               Options properties include:   
-
+    
     *   `validate`          Validate the records.   
-
+    
     `callback`              Called on success or failure. Received parameters are:   
-
+    
     *   `err`               Error object if any.   
     *   `records`           Records with their newly created identifier.   
-
+    
     Records are not validated, it is the responsability of the client program calling `create` to either
     call `validate` before calling `create` or to passs the `validate` options.   
     
@@ -625,7 +628,7 @@ module.exports = class Records extends Schema
             username: 'my_username'
             age: 28
         , (err, user) -> console.log user
-
+    
     ###
     update: (records, options, callback) ->
         if arguments.length is 2
@@ -644,7 +647,7 @@ module.exports = class Records extends Schema
         #    2.1 Make sure the new property is not assigned to another record
         #    2.2 Erase old index & Create new index
         # 3. Save the record
-        @id records, {object: true}, (err, records) =>
+        @identify records, {object: true}, (err, records) =>
             return callback err if err
             # Stop here if a record is invalid
             for record in records

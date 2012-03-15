@@ -26,8 +26,8 @@ describe 'create', ->
 
     it 'Test create # one user', (next) ->
         Users.create
-            username: 'my_username',
-            email: 'my@email.com',
+            username: 'my_username'
+            email: 'my@email.com'
             password: 'my_password'
         , (err, user) ->
             should.not.exist err
@@ -38,12 +38,12 @@ describe 'create', ->
 
     it 'Test create # multiple users', (next) ->
         Users.create [
-            username: 'my_username_1',
-            email: 'my_first@email.com',
+            username: 'my_username_1'
+            email: 'my_first@email.com'
             password: 'my_password'
         ,
-            username: 'my_username_2',
-            email: 'my_second@email.com',
+            username: 'my_username_2'
+            email: 'my_second@email.com'
             password: 'my_password'
         ], (err, users) ->
             should.not.exist err
@@ -54,8 +54,8 @@ describe 'create', ->
 
     it 'Test create # existing id', (next) ->
         Users.create
-            username: 'my_username',
-            email: 'my@email.com',
+            username: 'my_username'
+            email: 'my@email.com'
             password: 'my_password'
         , (err, user) ->
             should.not.exist err
@@ -76,8 +76,8 @@ describe 'create', ->
         , (err, user) ->
             should.not.exist err
             Users.create
-                username: 'my_username',
-                email: 'my@email.com',
+                username: 'my_username'
+                email: 'my@email.com'
                 password: 'my_password'
             , (err, user) ->
                 err.message.should.eql 'Record 1 already exists'
@@ -85,12 +85,12 @@ describe 'create', ->
 
     it 'should only return the newly created identifiers', (next) ->
         Users.create [
-            username: 'my_username_1',
-            email: 'my_first@email.com',
+            username: 'my_username_1'
+            email: 'my_first@email.com'
             password: 'my_password'
         ,
-            username: 'my_username_2',
-            email: 'my_second@email.com',
+            username: 'my_username_2'
+            email: 'my_second@email.com'
             password: 'my_password'
         ], identifiers: true, (err, ids) ->
             should.not.exist err
@@ -100,12 +100,12 @@ describe 'create', ->
 
     it 'should only return selected properties', (next) ->
         Users.create [
-            username: 'my_username_1',
-            email: 'my_first@email.com',
+            username: 'my_username_1'
+            email: 'my_first@email.com'
             password: 'my_password'
         ,
-            username: 'my_username_2',
-            email: 'my_second@email.com',
+            username: 'my_username_2'
+            email: 'my_second@email.com'
             password: 'my_password'
         ], properties: ['email'], (err, users) ->
             should.not.exist err
@@ -115,14 +115,23 @@ describe 'create', ->
 
     it 'should only insert defined properties', (next) ->
         Users.create
-            username: 'my_username_1',
-            email: 'my_first@email.com',
-            password: 'my_password'
+            username: 'my_username_1'
+            email: 'my_first@email.com'
             zombie: 'e.t. maison'
         , (err, user) ->
             Users.get user.user_id, (err, user) ->
                 should.not.exist user.zombie
                 Users.clear next
+
+    it 'should let you pass your own identifiers', (next) ->
+        Users.create
+            user_id: 1
+            username: 'my_username_1'
+        , (err, user) ->
+            Users.get 1, (err, user) ->
+                user.username.should.equal 'my_username_1'
+                Users.clear next
+
 
 
 
