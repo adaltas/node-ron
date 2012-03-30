@@ -96,3 +96,14 @@ describe 'list', ->
                 users[0].username.should.eql 'username_2'
                 users[1].username.should.eql 'username_1'
                 Users.clear next
+
+    it 'should return an array of identifiers', (next) ->
+        Users.create [
+            { username: 'username_1', email: '1@email.com', password: 'my_password' }
+            { username: 'username_2', email: '2@email.com', password: 'my_password' }
+        ], (err, users) ->
+            Users.list { identifiers: true }, (err, ids) ->
+                should.not.exist err
+                ids.length.should.eql 2
+                for id in ids then id.should.be.a 'number'
+                Users.clear next

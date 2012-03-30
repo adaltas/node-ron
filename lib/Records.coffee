@@ -255,9 +255,6 @@ module.exports = class Records extends Schema
                     for result in results
                         return callback new Error 'Corrupted user database ' if result[0] is not "0"
                     @unserialize records, options
-                    if options.identifiers
-                        records = for record in records
-                            record[identifier]
                     callback null, if isArray then records else records[0]
     ###
     
@@ -492,13 +489,14 @@ module.exports = class Records extends Schema
 
     `options`               Options properties include:   
 
-    *   `where`             Hash of property/value used to filter the query.   
-    *   `operation`         Redis operation in case of multiple `where` properties, default to `union`.   
-    *   `sort`              Name of the property by which records should be ordered.   
     *   `direction`         One of `asc` or `desc`, default to `asc`.   
-    *   `properties`        Array of properties to be returned.   
+    *   `identifiers`       Return an array of identifiers instead of the record objects.  
     *   `milliseconds`      Convert date value to milliseconds timestamps instead of `Date` objects.   
+    *   `properties`        Array of properties to be returned.   
+    *   `operation`         Redis operation in case of multiple `where` properties, default to `union`.   
     *   `seconds`           Convert date value to seconds timestamps instead of `Date` objects.   
+    *   `sort`              Name of the property by which records should be ordered.   
+    *   `where`             Hash of property/value used to filter the query.   
 
     `callback`              Called on success or failure. Received parameters are:   
 
@@ -530,7 +528,9 @@ module.exports = class Records extends Schema
             callback = options
             options = {}
         {redis, hash} = @
-        {db, name, properties, identifier, index} = @data
+        {db, name, identifier, index} = @data
+        options.properties = options.properties or Object.keys @data.properties
+        options.properties = [identifier] if options.identifiers
         args = []
         multi = @redis.multi()
         # Index
@@ -566,7 +566,7 @@ module.exports = class Records extends Schema
             args.push 'by'
             args.push "#{db}:#{name}:*->" + options.sort
         # Properties to return
-        for property of properties
+        for property in options.properties
             args.push 'get'
             args.push "#{db}:#{name}:*->" + property
         # Sorting property is a string
@@ -577,10 +577,9 @@ module.exports = class Records extends Schema
         args.push (err, values) =>
             return callback err if err
             return callback null, [] unless values.length
-            keys = Object.keys properties
-            result = for i in [0 ... values.length] by keys.length
+            result = for i in [0 ... values.length] by options.properties.length
                 record = {}
-                for property, j in keys
+                for property, j in options.properties
                     record[property] = values[i + j]
                 @unserialize record, options
             callback null, result
@@ -639,8 +638,8 @@ module.exports = class Records extends Schema
     *   `err`               Error object if any.   
     *   `records`           Records with their newly created identifier.   
     
-    Records are not validated, it is the responsability of the client program calling `create` to either
-    call `validate` before calling `create` or to passs the `validate` options.   
+    Records are not validated, it is the responsability of the client program to either
+    call `validate` before calling `update` or to passs the `validate` options.   
     
     Updating a single record:   
 

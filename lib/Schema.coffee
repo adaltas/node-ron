@@ -260,15 +260,17 @@ module.exports = class Schema
 
     `options`               Options include:   
 
+    *   `identifiers`       Return an array of identifiers instead of the record objects.  
     *   `properties`        Array of properties to be returned.  
     *   `milliseconds`      Convert date value to milliseconds timestamps instead of `Date` objects.   
     *   `seconds`           Convert date value to seconds timestamps instead of `Date` objects.   
 
     ###
     unserialize: (records, options = {}) ->
-        {properties} = @data
+        {identifier, properties} = @data
         isArray = Array.isArray records
         records = [records] unless isArray
+        options.properties = [identifier] if options.identifiers
         for record, i in records
             continue unless record?
             # Convert the record
@@ -289,9 +291,11 @@ module.exports = class Schema
                         else if options.seconds
                             record[property] = Math.round( value / 1000 )
                         else record[property] = new Date value
+                records[i] = record[identifier] if options.identifiers
             # By convension, this has to be an identifier but we can't check it
             else if typeof record is 'number' or typeof record is 'string'
                 records[i] = parseInt record
+
         if isArray then records else records[0]
     ###
 
