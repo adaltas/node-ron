@@ -21,7 +21,7 @@
         "each": "latest",
         "mecano": "latest",
         "mocha": "latest",
-        "should": "latest"
+        "should": "0.6.0"
     },
     "contributors": [ 
         { "name": "David Worms", "email": "david@adaltas.com" }

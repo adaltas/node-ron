@@ -28,10 +28,10 @@ describe 'type', ->
                 should.not.exist err
                 # should v0.6.3 is broken with "instanceof Date"
                 # https://github.com/visionmedia/should.js/issues/65
-                (record.cdate instanceof Date).should.be.true
-                (record.mdate instanceof Date).should.be.true
-                # record.cdate.should.be.an.instanceof Date
-                # record.mdate.should.be.an.instanceof Date
+                # (record.cdate instanceof Date).should.be.true
+                # (record.mdate instanceof Date).should.be.true
+                record.cdate.should.be.an.instanceof Date
+                record.mdate.should.be.an.instanceof Date
                 next()
 
     it 'should deal with update', (next) ->
@@ -48,10 +48,10 @@ describe 'type', ->
                     should.not.exist err
                     # should v0.6.3 is broken with "instanceof Date"
                     # https://github.com/visionmedia/should.js/issues/65
-                    (record.cdate is cdate).should.be.true
-                    (record.cdate instanceof Date).should.be.true
-                    (record.mdate instanceof Date).should.be.true
-                    # record.cdate.should.eql cdate
-                    # record.cdate.should.be.an.instanceof Date
-                    # record.mdate.should.be.an.instanceof Date
+                    # (record.cdate is cdate).should.be.true
+                    # (record.cdate instanceof Date).should.be.true
+                    # (record.mdate instanceof Date).should.be.true
+                    record.cdate.should.eql cdate
+                    record.cdate.should.be.an.instanceof Date
+                    record.mdate.should.be.an.instanceof Date
                     next()
