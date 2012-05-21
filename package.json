@@ -2,7 +2,7 @@
     "name": "ron",
     "description": "Redis ORM for NodeJs.",
     "keywords": ["redis", "orm", "database", "nosql"],
-    "version": "0.0.6",
+    "version": "0.0.7",
     "homepage": "http://www.adaltas.com/projects/node-ron",
     "author": "David Worms <david@adaltas.com>",
     "repository": {
