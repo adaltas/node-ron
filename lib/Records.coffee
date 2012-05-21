@@ -299,10 +299,10 @@ module.exports = class Records extends Schema
 
     `get(records, [options], callback)`
     -----------------------------------
-    Retrieve one or multiple records. If options is an array, it is considered 
-    to be the list of properties to retrieve. By default, unless the `force` 
-    option is defined, only the properties not yet defined in the provided 
-    records are fetch from Redis.   
+    Retrieve one or multiple records. Records that doesn't exists are returned as null. If 
+    options is an array, it is considered to be the list of properties to retrieve. By default, 
+    unless the `force` option is defined, only the properties not yet defined in the provided 
+    records are fetched from Redis.   
 
     `options`               All options are optional. Options properties include:   
     
@@ -337,21 +337,25 @@ module.exports = class Records extends Schema
             records.forEach (record, i) ->
                 # An error would have been thrown by id if record was null and accept_null wasn't provided
                 return unless record?
-                if record[identifier] is null
+                recordId = record[identifier]
+                if recordId is null
                     records[i] = null
                 else if options.properties?.length
                     options.properties.forEach (property) ->
                         unless options.force or record[property]
-                            recordId = record[identifier]
-                            cmds.push ['hget', "#{db}:#{name}:#{recordId}", property, (err, value)->
+                            cmds.push ['hget', "#{db}:#{name}:#{recordId}", property, (err, value) ->
                                 record[property] = value
                             ]
                 else
-                    recordId = record[identifier]
-                    cmds.push ['hgetall', "#{db}:#{name}:#{recordId}", (err, values)->
+                    cmds.push ['hgetall', "#{db}:#{name}:#{recordId}", (err, values) ->
                         for property, value of values
                             record[property] = value
                     ]
+                # Check if the record really exists
+                cmds.push ['exists', "#{db}:#{name}:#{recordId}", (err, exists) ->
+                    records[i] = null unless exists
+                ]
+            # No need to go further
             if cmds.length is 0
                 return callback null, if isArray then records else records[0]
             multi = redis.multi cmds

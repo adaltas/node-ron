@@ -24,7 +24,7 @@ describe 'get', ->
     after (next) ->
         client.quit next
 
-    it 'Test get # identifier', (next) ->
+    it 'should use a provided identifier', (next) ->
         Users.create
             username: 'my_username'
             email: 'my@email.com'
@@ -41,6 +41,12 @@ describe 'get', ->
                     should.not.exist err
                     user.user_id.should.eql userId
                     Users.clear next
+
+    it 'should faild with a missing identifier', (next) ->
+        Users.get -1, (err, user) ->
+            should.not.exist err
+            should.not.exist user
+            Users.clear next
 
     it 'Test get # unique property', (next) ->
         Users.create
@@ -59,7 +65,7 @@ describe 'get', ->
             should.not.exist user
             Users.clear next
 
-    it 'Test get # properties', (next) ->
+    it 'should only return the provided properties', (next) ->
         Users.create
             username: 'my_username'
             email: 'my@email.com'
