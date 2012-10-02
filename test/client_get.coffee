@@ -1,10 +1,10 @@
 
-    should = require 'should'
+should = require 'should'
 
-    try config = require '../conf/test' catch e
-    ron = require '..'
+try config = require '../conf/test' catch e
+ron = require '..'
 
-    describe 'client get', ->
+describe 'client get', ->
 
     it 'should accept a string name', (next) ->
         client = ron config
