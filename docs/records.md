@@ -3,7 +3,7 @@ language: en
 layout: page
 title: "
 Records access and manipulation"
-date: 2012-03-11T12:51:16.820Z
+date: 2012-10-01T07:39:11.604Z
 comments: false
 sharing: false
 footer: false
@@ -69,14 +69,38 @@ ron.get('users').clear (err, count) ->
 
 <a name="count"></a>`count(callback)`
 -----------------
-Count the number of records present in the database.   
+Count the number of records present in the database.    
+
+Counting all the records:   
+```coffeescript
+
+Users.count, (err, count) ->
+    console.log 'count users', count
+
+```
+<a name="count"></a>`count(property, values, callback)`
+----------------------------------
+Count the number of one or more values for an indexed property.  
+
+Counting multiple values:   
+```coffeescript
+
+Users.get 'users', properties:
+    user_id: identifier: true
+    job: index: true
+Users.count 'job' [ 'globtrotter', 'icemaker' ], (err, counts) ->
+    console.log 'count globtrotter', counts[0]
+    console.log 'count icemaker', counts[1]
+```
 
 
 <a name="create"></a>`create(records, [options], callback)`
 --------------------------------------
 Insert one or multiple record. The records must not already exists 
-in the database or an error will be returned in the callback. The records objects
-passed in the function are returned in the callback with their new identifier property.
+in the database or an error will be returned in the callback. Only
+the defined properties are inserted.
+
+The records passed to the function are returned in the callback enriched their new identifier property.
 
 `records`               Record object or array of record objects.   
 
@@ -115,25 +139,31 @@ its associated return value is null.
 
 <a name="get"></a>`get(records, [options], callback)`
 -----------------------------------
-Retrieve one or multiple records. If options is an array, it is considered 
-to be the list of properties to retrieve. By default, unless the `force` 
-option is defined, only the properties not yet defined in the provided 
-records are fetch from Redis.   
+Retrieve one or multiple records. Records that doesn't exists are returned as null. If 
+options is an array, it is considered to be the list of properties to retrieve. By default, 
+unless the `force` option is defined, only the properties not yet defined in the provided 
+records are fetched from Redis.   
 
 `options`               All options are optional. Options properties include:   
 
-*   `properties`        Array of properties to fetch, all properties if not defined.   
+*   `properties`        Array of properties to fetch, all properties unless defined.   
 *   `force`             Force the retrieval of properties even if already present in the record objects.   
 *   `accept_null`       Skip objects if they are provided as null.   
+*   `object`            If `true`, return an object where keys are the identifier and value are the fetched records
 
 `callback`              Called on success or failure. Received parameters are:   
 
 *   `err`               Error object if the command failed.   
 *   `records`           Object or array of object if command succeed. Objects are null if records are not found.   
 
+<a name="id"></a>`id(records, callback)`
+-----------------------
+Generate new identifiers. The first arguments `records` may be the number
+of ids to generate, a record or an array of records.
 
-<a name="id"></a>`id(records, [options], callback)`
-----------------------------------
+
+<a name="identify"></a>`identify(records, [options], callback)`
+----------------------------------------
 Extract record identifiers or set the identifier to null if its associated record could not be found.   
 
 The method doesn't hit the database to validate record values and if an id is 
@@ -182,13 +212,14 @@ List records with support for filtering and sorting.
 
 `options`               Options properties include:   
 
-*   `where`             Hash of property/value used to filter the query.   
-*   `operation`         Redis operation in case of multiple `where` properties, default to `union`.   
-*   `sort`              Name of the property by which records should be ordered.   
 *   `direction`         One of `asc` or `desc`, default to `asc`.   
-*   `properties`        Array of properties to be returned.   
+*   `identifiers`       Return an array of identifiers instead of the record objects.  
 *   `milliseconds`      Convert date value to milliseconds timestamps instead of `Date` objects.   
+*   `properties`        Array of properties to be returned.   
+*   `operation`         Redis operation in case of multiple `where` properties, default to `union`.   
 *   `seconds`           Convert date value to seconds timestamps instead of `Date` objects.   
+*   `sort`              Name of the property by which records should be ordered.   
+*   `where`             Hash of property/value used to filter the query.   
 
 `callback`              Called on success or failure. Received parameters are:   
 
@@ -224,6 +255,20 @@ Users.list
 Remove one or several records from the database. The function will also 
 handle all the indexes referencing those records.   
 
+`records`               Record object or array of record objects.   
+
+`callback`              Called on success or failure. Received parameters are:   
+
+*   `err`               Error object if any.   
+*   `removed`           Number of removed records.  
+
+Removing a single record:   
+```coffeescript
+
+Users.remove id, (err, removed) ->
+    console.log "#{removed} user removed"
+```
+
 
 <a name="update"></a>`update(records, [options], callback)` 
 --------------------------------------
@@ -242,8 +287,8 @@ be discovered through its identifier or the presence of a unique property.
 *   `err`               Error object if any.   
 *   `records`           Records with their newly created identifier.   
 
-Records are not validated, it is the responsability of the client program calling `create` to either
-call `validate` before calling `create` or to passs the `validate` options.   
+Records are not validated, it is the responsability of the client program to either
+call `validate` before calling `update` or to passs the `validate` options.   
 
 Updating a single record:   
 ```coffeescript

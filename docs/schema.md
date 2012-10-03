@@ -3,7 +3,7 @@ language: en
 layout: page
 title: "
 Schema definition"
-date: 2012-03-11T12:51:16.820Z
+date: 2012-10-01T07:39:11.604Z
 comments: false
 sharing: false
 footer: false
@@ -12,7 +12,8 @@ github: https://github.com/wdavidw/node-ron
 ---
 
 
-A schema is defined once and must no change. We dont support schema migration at the moment. The `Records`
+Schema is a mixin from which `Records` inherits. A schema is defined once 
+and must no change. We dont support schema migration at the moment. The `Records`
 class inherit all the properties and method of the shema.
 
 `ron`                   Reference to the Ron instance   
@@ -133,8 +134,8 @@ property types.
 ---------------------
 Define or retrieve temporal definition. Marking a schema as 
 temporal will transparently add two new date properties, the 
-date when the record was created (by default "creation"), and the date 
-when the record was last updated (by default "modification").
+date when the record was created (by default "cdate"), and the date 
+when the record was last updated (by default "mdate").
 
 
 <a name="unique"></a>`unique([property])`
@@ -162,6 +163,7 @@ property types.
 
 `options`               Options include:   
 
+*   `identifiers`       Return an array of identifiers instead of the record objects.  
 *   `properties`        Array of properties to be returned.  
 *   `milliseconds`      Convert date value to milliseconds timestamps instead of `Date` objects.   
 *   `seconds`           Convert date value to seconds timestamps instead of `Date` objects.   

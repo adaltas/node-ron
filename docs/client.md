@@ -3,7 +3,7 @@ language: en
 layout: page
 title: "
 Client connection"
-date: 2012-03-11T12:51:16.819Z
+date: 2012-10-01T07:39:11.603Z
 comments: false
 sharing: false
 footer: false

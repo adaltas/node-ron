@@ -46,8 +46,8 @@ Users.create(
 )
 ```
 
-The library provide
--------------------
+The library provides
+--------------------
 
 *	Documented and tested API
 *   Records access with indexes and unique values
