@@ -597,21 +597,37 @@ module.exports = class Records extends Schema
     ---------------------------
     Remove one or several records from the database. The function will also 
     handle all the indexes referencing those records.   
-    
+
+    `records`               Record object or array of record objects.   
+
+    `callback`              Called on success or failure. Received parameters are:   
+
+    *   `err`               Error object if any.   
+    *   `removed`           Number of removed records.  
+
+    Removing a single record:   
+
+        Users.remove id, (err, removed) ->
+            console.log "#{removed} user removed"
+
     ###
     remove: (records, callback) ->
         {redis, hash} = @
         {db, name, identifier, index, unique} = @data
         isArray = Array.isArray records
         records = [records] unless isArray
+        removed = 0
         @get records, [].concat(Object.keys(unique), Object.keys(index)), (err, records) ->
             return callback err if err
             multi = redis.multi()
             for record in records
+                # Bypass null records, not much to do with it
+                continue if record is null
                 do (record) ->
                     # delete objects
                     recordId = record[identifier]
-                    multi.del "#{db}:#{name}:#{recordId}"
+                    multi.del "#{db}:#{name}:#{recordId}", (err) ->
+                        removed++
                     # delete indexes
                     multi.srem "#{db}:#{name}_#{identifier}", recordId
                     for property of unique
@@ -622,7 +638,7 @@ module.exports = class Records extends Schema
                             console.warn('Missing indexed property') if count isnt 1
             multi.exec (err, results) ->
                 return callback err if err
-                callback null, records.length
+                callback null, removed
     ###
     
     `update(records, [options], callback)` 

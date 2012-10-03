@@ -37,3 +37,12 @@ describe 'remove', ->
                 Users.exists user.user_id, (err, exists) ->
                     should.not.exist exists
                     next()
+
+    it 'should not remove a missing record', (next) ->
+        # Delete record based on identifier
+        Users.remove -1, (err, count) ->
+            should.not.exist err
+            # Count shouldn't be incremented
+            count.should.eql 0
+            next()
+
