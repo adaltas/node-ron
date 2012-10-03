@@ -107,6 +107,8 @@ module.exports = class Records extends Schema
         multi.smembers "#{db}:#{name}_#{identifier}", (err, recordIds) ->
             return callback err if err
             # Return count in final callback
+            # console.log 'recordIds', err, recordIds
+            recordIds ?= []
             count = recordIds.length
             # delete objects
             for recordId in recordIds
@@ -713,14 +715,14 @@ module.exports = class Records extends Schema
                 # If an index has changed, we need to update it
                 do (record) ->
                     recordId = record[identifier]
-                    changedProperties = []
+                    potentiallyChangedProperties = []
                     # Find the indexed properties that may have changed
                     for property in [].concat(Object.keys(unique), Object.keys(index))
-                        changedProperties.push property if typeof record[property] isnt 'undefined'
-                    if changedProperties.length
+                        potentiallyChangedProperties.push property if typeof record[property] isnt 'undefined'
+                    if potentiallyChangedProperties.length
                         # Get the persisted value for those indexed properties
-                        multi.hmget "#{db}:#{name}:#{recordId}", changedProperties, (err, values) ->
-                            for property, propertyI in changedProperties
+                        multi.hmget "#{db}:#{name}:#{recordId}", potentiallyChangedProperties..., (err, values) ->
+                            for property, propertyI in potentiallyChangedProperties
                                 if values[propertyI] isnt record[property]
                                     if properties[property].unique
                                         # First we check if index for new key exists to avoid duplicates

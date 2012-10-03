@@ -28,12 +28,12 @@ describe 'update', ->
             Users.update [{email: 'missing@email.com'}], (err, users) ->
                 # Todo, could be "Record without identifier or unique properties
                 err.message.should.eql 'Invalid record, got {"email":"missing@email.com"}' 
-                Users.clear next
+                next()
 
         it 'should use unique index and fail because the provided value is not indexed', (next) ->
             Users.update [{username: 'missing'}], (err, users) ->
                 err.message.should.eql 'Unsaved record'
-                Users.clear next
+                next()
 
     describe 'unique', ->
 
@@ -54,7 +54,7 @@ describe 'update', ->
                             should.not.exist user
                             Users.get {username: 'new_username'}, (err, user) ->
                                 user.username.should.eql 'new_username'
-                                Users.clear next
+                                next()
 
         it 'should fail to update a unique value that is already defined', (next) ->
             Users.create  [
@@ -71,7 +71,7 @@ describe 'update', ->
                 user.username = 'my_username_2'
                 Users.update user, (err, user) ->
                     err.message.should.eql 'Unique value already exists'
-                    return Users.clear next
+                    next()
 
     describe 'index', ->
 
@@ -93,7 +93,7 @@ describe 'update', ->
                             Users.list {email: 'new@email.com'}, (err, users) ->
                                 users.length.should.eql 1
                                 users[0].email.should.eql 'new@email.com'
-                                Users.clear next
+                                next()
 
         it 'should update an indexed property to null and be able to list the record', (next) ->
             Users.create  {
@@ -113,4 +113,4 @@ describe 'update', ->
                             Users.list {email: null}, (err, users) ->
                                 users.length.should.eql 1
                                 should.not.exist users[0].email
-                                Users.clear next
+                                next()
