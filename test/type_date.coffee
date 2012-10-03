@@ -75,12 +75,12 @@ describe 'type date', ->
             , (err, record) ->
                 should.not.exist err
                 recordId = record.record_id
-                record.a_date.should.eql date
+                record.a_date.getTime().should.eql date.getTime()
                 # Test all
                 Records.all (err, records) ->
                     should.not.exist err
                     records.length.should.equal 1
-                    records[0].a_date.should.eql date
+                    records[0].a_date.getTime().should.eql date.getTime()
                     # Test update
                     date.setYear 2010
                     Records.update
@@ -88,14 +88,14 @@ describe 'type date', ->
                         a_date: date
                     , (err, record) ->
                         should.not.exist err
-                        record.a_date.should.eql date
+                        record.a_date.getTime().should.eql date.getTime()
                         # Test list
                         Records.list (err, records) ->
                             should.not.exist err
                             records.length.should.equal 1
-                            records[0].a_date.should.eql date
+                            records[0].a_date.getTime().should.eql date.getTime()
                             # Test list
                             Records.get records[0].record_id, (err, record) ->
                                 should.not.exist err
-                                record.a_date.should.eql date
+                                record.a_date.getTime().should.eql date.getTime()
                                 next()
