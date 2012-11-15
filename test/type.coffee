@@ -26,6 +26,8 @@ describe 'type', ->
       password: 'my_password'
     , (err, user) ->
       properties = ['email', 'user_id']
+      console.log 'a', user
       Users.unserialize user, properties: properties
+      console.log 'b', user
       Object.keys(user).should.eql properties
       Users.clear next
