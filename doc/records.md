@@ -3,7 +3,7 @@ language: en
 layout: page
 title: "
 Records access and manipulation"
-date: 2012-11-15T21:16:28.466Z
+date: 2012-11-15T21:39:55.923Z
 comments: false
 sharing: false
 footer: false
