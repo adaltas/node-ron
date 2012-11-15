@@ -25,6 +25,7 @@ describe 'type', ->
       email: 'my@email.com',
       password: 'my_password'
     , (err, user) ->
+      should.not.exist err
       properties = ['email', 'user_id']
       console.log 'a', user
       Users.unserialize user, properties: properties
