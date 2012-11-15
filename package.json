@@ -14,10 +14,10 @@
     "url": "http://github.com/wdavidw/node-ron/issues"
   },
   "dependencies": {
-    "coffee-script": "latest",
     "redis": "latest"
   },
   "devDependencies": {
+    "coffee-script": "latest",
     "each": "latest",
     "mecano": "latest",
     "mocha": "latest",
