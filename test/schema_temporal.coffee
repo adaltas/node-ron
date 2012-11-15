@@ -4,17 +4,22 @@ should = require 'should'
 try config = require '../conf/test' catch e
 ron = if process.env.RON_COV then require '../lib-cov/ron' else require '../lib/ron'
 
-describe 'type', ->
+client = Users = null
 
-  client = Users = null
+before (next) ->
+  client = ron config
+  next()
   
-  before (next) ->
-    client = ron config
+afterEach (next) ->
+  client.redis.keys '*', (err, keys) ->
+    should.not.exists err
+    keys.should.eql []
     next()
-  
-  after (next) ->
-    client.quit next
 
+after (next) ->
+  client.quit next
+
+describe 'type', ->
 
   it 'should deal with create', (next) ->
     Records = client.get
@@ -32,7 +37,7 @@ describe 'type', ->
         (record.mdate instanceof Date).should.be.true
         # record.cdate.should.be.an.instanceof Date
         # record.mdate.should.be.an.instanceof Date
-        next()
+        Records.clear next
 
   it 'should deal with update', (next) ->
     Records = client.get

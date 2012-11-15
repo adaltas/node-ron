@@ -21,6 +21,12 @@ describe 'all', ->
   beforeEach (next) ->
     Users.clear next
   
+  afterEach (next) ->
+    client.redis.keys '*', (err, keys) ->
+      should.not.exists err
+      keys.should.eql []
+      next()
+  
   after (next) ->
     client.quit next
 

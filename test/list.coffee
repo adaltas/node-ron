@@ -4,32 +4,38 @@ should = require 'should'
 try config = require '../conf/test' catch e
 ron = if process.env.RON_COV then require '../lib-cov/ron' else require '../lib/ron'
 
-describe 'list', ->
+client = Users = null
 
-  client = Users = null
+before (next) ->
+  client = ron config
+  Users = client.get
+    name: 'users'
+    properties: 
+      user_id: identifier: true
+      username: unique: true
+      email: index: true
+      name: index: true
+  next()
+
+beforeEach (next) ->
+  Users.clear next
   
-  before (next) ->
-    client = ron config
-    Users = client.get
-      name: 'users'
-      properties: 
-        user_id: identifier: true
-        username: unique: true
-        email: index: true
-        name: index: true
+afterEach (next) ->
+  client.redis.keys '*', (err, keys) ->
+    should.not.exists err
+    keys.should.eql []
     next()
 
-  beforeEach (next) ->
-    Users.clear next
-  
-  after (next) ->
-    client.quit next
+after (next) ->
+  client.quit next
+
+describe 'list', ->
 
   it 'should be empty if there are no record', (next) ->
     Users.list { }, (err, users) ->
       should.not.exist err
       users.length.should.eql 0
-      next()
+      Users.clear next
 
   it 'should sort record according to one property', (next) ->
     Users.create [

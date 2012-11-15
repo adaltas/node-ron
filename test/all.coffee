@@ -4,25 +4,32 @@ should = require 'should'
 try config = require '../conf/test' catch e
 ron = if process.env.RON_COV then require '../lib-cov/ron' else require '../lib/ron'
 
-describe 'all', ->
+client = Users = null
 
-  client = Users = null
-  
-  before (next) ->
-    client = ron config
-    Users = client.get
-      name: 'users'
-      properties: 
-        user_id: identifier: true
-        username: unique: true
-        email: index: true
+before (next) ->
+  client = ron config
+  Users = client.get
+    name: 'users'
+    properties: 
+      user_id: identifier: true
+      username: unique: true
+      email: index: true
+  next()
+
+beforeEach (next) ->
+  Users.clear next
+
+afterEach (next) ->
+  client.redis.keys '*', (err, keys) ->
+    should.not.exists err
+    keys.should.eql []
     next()
 
-  beforeEach (next) ->
-    Users.clear next
+after (next) ->
   
-  after (next) ->
-    client.quit next
+  client.quit next
+
+describe 'all', ->
 
   it 'shall create 2 users and list them', (next) ->
     Users.create [
@@ -36,5 +43,5 @@ describe 'all', ->
         should.not.exist err
         users.length.should.eql 2
         for user in users then user.username.should.match /^my_/
-        next()
+        Users.clear next
     

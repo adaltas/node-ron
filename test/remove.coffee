@@ -4,24 +4,30 @@ should = require 'should'
 try config = require '../conf/test' catch e
 ron = if process.env.RON_COV then require '../lib-cov/ron' else require '../lib/ron'
 
-describe 'remove', ->
+client = Users = null
 
-  client = Users = null
+before (next) ->
+  client = ron config
+  Users = client.get 'users'
+  Users.identifier 'user_id'
+  Users.unique 'username'
+  Users.index 'email'
+  Users = client.get 'users'
+  next()
+
+beforeEach (next) ->
+  Users.clear next
   
-  before (next) ->
-    client = ron config
-    Users = client.get 'users'
-    Users.identifier 'user_id'
-    Users.unique 'username'
-    Users.index 'email'
-    Users = client.get 'users'
+afterEach (next) ->
+  client.redis.keys '*', (err, keys) ->
+    should.not.exists err
+    keys.should.eql []
     next()
 
-  beforeEach (next) ->
-    Users.clear next
-  
-  after (next) ->
-    client.quit next
+after (next) ->
+  client.quit next
+
+describe 'remove', ->
 
   it 'should remove a record if providing an identifier', (next) ->
     Users.create {
@@ -36,7 +42,7 @@ describe 'remove', ->
         # Check record doesn't exist
         Users.exists user.user_id, (err, exists) ->
           should.not.exist exists
-          next()
+          Users.clear next
 
   it 'should not remove a missing record', (next) ->
     # Delete record based on identifier
@@ -44,5 +50,5 @@ describe 'remove', ->
       should.not.exist err
       # Count shouldn't be incremented
       count.should.eql 0
-      next()
+      Users.clear next
 

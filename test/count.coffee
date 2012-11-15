@@ -4,23 +4,30 @@ should = require 'should'
 try config = require '../conf/test' catch e
 ron = if process.env.RON_COV then require '../lib-cov/ron' else require '../lib/ron'
 
-describe 'count', ->
 
-  client = Users = null
+client = Users = null
+
+before (next) ->
+  client = ron config
+  Users = client.get 'users'
+  Users.identifier 'user_id'
+  Users.unique 'username'
+  Users.index 'email'
+  next()
+
+beforeEach (next) ->
+  Users.clear next
   
-  before (next) ->
-    client = ron config
-    Users = client.get 'users'
-    Users.identifier 'user_id'
-    Users.unique 'username'
-    Users.index 'email'
+afterEach (next) ->
+  client.redis.keys '*', (err, keys) ->
+    should.not.exists err
+    keys.should.eql []
     next()
 
-  beforeEach (next) ->
-    Users.clear next
-  
-  after (next) ->
-    client.quit next
+after (next) ->
+  client.quit next
+
+describe 'count', ->
 
   it 'should count the records', (next) ->
     Users.create [
@@ -35,7 +42,7 @@ describe 'count', ->
       Users.count (err, count) ->
         should.not.exist err
         count.should.eql 2
-        next()
+        Users.clear next
 
   it 'should count the index elements of a property', (next) ->
     Users.create [
@@ -60,5 +67,5 @@ describe 'count', ->
           should.not.exist err
           counts[0].should.eql 2
           counts[1].should.eql 1
-          next()
+          Users.clear next
 

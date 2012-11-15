@@ -4,16 +4,22 @@ should = require 'should'
 try config = require '../conf/test' catch e
 ron = if process.env.RON_COV then require '../lib-cov/ron' else require '../lib/ron'
 
-describe 'type', ->
+client = Users = null
 
-  client = Users = null
+before (next) ->
+  client = ron config
+  next()
   
-  before (next) ->
-    client = ron config
+afterEach (next) ->
+  client.redis.keys '*', (err, keys) ->
+    should.not.exists err
+    keys.should.eql []
     next()
-  
-  after (next) ->
-    client.quit next
+
+after (next) ->
+  client.quit next
+
+describe 'type', ->
 
   it 'should filter properties', (next) ->
     Users = client.get 'users', temporal: true, properties: 

@@ -4,25 +4,31 @@ should = require 'should'
 try config = require '../conf/test' catch e
 ron = if process.env.RON_COV then require '../lib-cov/ron' else require '../lib/ron'
 
-describe 'get', ->
+client = Users = null
 
-  client = Users = null
+before (next) ->
+  client = ron config
+  Users = client.get
+    name: 'users'
+    properties: 
+      user_id: identifier: true
+      username: unique: true
+      email: index: true
+  next()
+
+beforeEach (next) ->
+  Users.clear next
   
-  before (next) ->
-    client = ron config
-    Users = client.get
-      name: 'users'
-      properties: 
-        user_id: identifier: true
-        username: unique: true
-        email: index: true
+afterEach (next) ->
+  client.redis.keys '*', (err, keys) ->
+    should.not.exists err
+    keys.should.eql []
     next()
 
-  beforeEach (next) ->
-    Users.clear next
-  
-  after (next) ->
-    client.quit next
+after (next) ->
+  client.quit next
+
+describe 'get', ->
 
   it 'should use a provided identifier', (next) ->
     Users.create

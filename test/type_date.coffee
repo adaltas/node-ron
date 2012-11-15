@@ -4,16 +4,22 @@ should = require 'should'
 try config = require '../conf/test' catch e
 ron = if process.env.RON_COV then require '../lib-cov/ron' else require '../lib/ron'
 
-describe 'type date', ->
+client = Users = null
 
-  client = Users = null
-  
-  before (next) ->
-    client = ron config
+before (next) ->
+  client = ron config
+  next()
+
+afterEach (next) ->
+  client.redis.keys '*', (err, keys) ->
+    should.not.exists err
+    keys.should.eql []
     next()
-  
-  after (next) ->
-    client.quit next
+
+after (next) ->
+  client.quit next
+
+describe 'type date', ->
 
   it 'should return a record or an array depending on the provided argument', ->
     Records = client.get

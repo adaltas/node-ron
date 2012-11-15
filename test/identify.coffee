@@ -4,25 +4,31 @@ should = require 'should'
 try config = require '../conf/test' catch e
 ron = if process.env.RON_COV then require '../lib-cov/ron' else require '../lib/ron'
 
-describe 'id', ->
+client = Users = null
 
-  client = Users = null
+before (next) ->
+  client = ron config
+  Users = client.get 
+    name: 'users'
+    properties: 
+      user_id: identifier: true
+      username: unique: true
+      email: index: true
+  next()
+
+beforeEach (next) ->
+  Users.clear next
   
-  before (next) ->
-    client = ron config
-    Users = client.get 
-      name: 'users'
-      properties: 
-        user_id: identifier: true
-        username: unique: true
-        email: index: true
+afterEach (next) ->
+  client.redis.keys '*', (err, keys) ->
+    should.not.exists err
+    keys.should.eql []
     next()
 
-  beforeEach (next) ->
-    Users.clear next
-  
-  after (next) ->
-    client.quit next
+after (next) ->
+  client.quit next
+
+describe 'id', ->
 
   it 'Test id # number', (next) ->
     Users.identify 3, (err, userId) ->
@@ -31,7 +37,7 @@ describe 'id', ->
       Users.identify [3], (err, userId) ->
         should.not.exist err
         userId.should.eql [3]
-        next()
+        Users.clear next
 
   it 'Test id # user.user_id', (next) ->
     Users.identify {user_id: 3}, (err, userId) ->
@@ -40,7 +46,7 @@ describe 'id', ->
       Users.identify [{user_id: 3, username: 'my_username'}], (err, userId) ->
         should.not.exist err
         userId.should.eql [3]
-        next()
+        Users.clear next
 
   it 'Test id # user.username', (next) ->
     Users.create

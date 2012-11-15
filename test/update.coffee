@@ -4,28 +4,29 @@ should = require 'should'
 try config = require '../conf/test' catch e
 ron = if process.env.RON_COV then require '../lib-cov/ron' else require '../lib/ron'
 
-describe 'update', ->
+client = Users = null
 
-  client = Users = null
+before (next) ->
+  client = ron config
+  Users = client.get 'users'
+  Users.identifier 'user_id'
+  Users.unique 'username'
+  Users.index 'email'
+  next()
+
+beforeEach (next) ->
+  Users.clear next
   
-  before (next) ->
-    client = ron config
-    Users = client.get 'users'
-    Users.identifier 'user_id'
-    Users.unique 'username'
-    Users.index 'email'
+afterEach (next) ->
+  client.redis.keys '*', (err, keys) ->
+    should.not.exists err
+    keys.should.eql []
     next()
 
-  beforeEach (next) ->
-    Users.clear next
-    # client.redis.flushdb next
+after (next) ->
+  client.quit next
 
-  # afterEach (next) ->
-  #   # Users.clear next
-  #   client.redis.flushdb next
-  
-  after (next) ->
-    client.quit next
+describe 'update', ->
 
   describe 'identifier', ->
 
@@ -59,7 +60,7 @@ describe 'update', ->
               should.not.exist user
               Users.get {username: 'new_username'}, (err, user) ->
                 user.username.should.eql 'new_username'
-                next()
+                Users.clear next
 
     it 'should fail to update a unique value that is already defined', (next) ->
       Users.create  [
@@ -76,7 +77,7 @@ describe 'update', ->
         user.username = 'my_username_2'
         Users.update user, (err, user) ->
           err.message.should.eql 'Unique value already exists'
-          next()
+          Users.clear next
 
   describe 'index', ->
 
@@ -98,7 +99,7 @@ describe 'update', ->
               Users.list {email: 'new@email.com'}, (err, users) ->
                 users.length.should.eql 1
                 users[0].email.should.eql 'new@email.com'
-                next()
+                Users.clear next
 
     it 'should update an indexed property to null and be able to list the record', (next) ->
       Users.create  {
@@ -118,4 +119,4 @@ describe 'update', ->
               Users.list {email: null}, (err, users) ->
                 users.length.should.eql 1
                 should.not.exist users[0].email
-                next()
+                Users.clear next
