@@ -104,4 +104,4 @@ describe 'type date', ->
               Records.get records[0].record_id, (err, record) ->
                 should.not.exist err
                 record.a_date.getTime().should.eql date.getTime()
-                next()
+                Records.clear next
