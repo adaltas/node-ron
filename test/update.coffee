@@ -34,12 +34,12 @@ describe 'update', ->
       Users.update [{email: 'missing@email.com'}], (err, users) ->
         # Todo, could be "Record without identifier or unique properties
         err.message.should.eql 'Invalid record, got {"email":"missing@email.com"}' 
-        next()
+        Users.clear next
 
     it 'should use unique index and fail because the provided value is not indexed', (next) ->
       Users.update [{username: 'missing'}], (err, users) ->
         err.message.should.eql 'Unsaved record'
-        next()
+        Users.clear next
 
   describe 'unique', ->
 
