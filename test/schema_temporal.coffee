@@ -54,4 +54,4 @@ describe 'type', ->
           # record.mdate.should.be.an.instanceof Date
           # (record.cdate is cdate).should.be.true
           record.cdate.getTime().should.eql cdate.getTime()
-          next()
+          Records.clear next
