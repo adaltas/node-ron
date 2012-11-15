@@ -21,7 +21,7 @@ each( ['Client', 'Schema', 'Records'] )
 .parallel( true )
 .on 'item', (next, file) ->
   source = "#{__dirname}/#{file}.coffee"
-  destination = "#{__dirname}/../docs/#{file.toLowerCase()}.md"
+  destination = "#{__dirname}/../doc/#{file.toLowerCase()}.md"
   fs.readFile source, 'ascii', (err, content) ->
     return console.error err if err
     re = /###\n([\s\S]*?)\n( *)###/g
@@ -57,7 +57,7 @@ each( ['Client', 'Schema', 'Records'] )
   each( ['index', 'client', 'schema', 'records'] )
   .on 'item', (next, file) ->
     mecano.copy
-      source: "#{__dirname}/../docs/#{file}.md"
+      source: "#{__dirname}/../doc/#{file}.md"
       destination: destination
       force: true
     , next

@@ -2,7 +2,7 @@
 should = require 'should'
 
 try config = require '../conf/test' catch e
-ron = require '../index'
+ron = if process.env.RON_COV then require '../lib-cov/ron' else require '../lib/ron'
 
 describe 'create_validation', ->
 
