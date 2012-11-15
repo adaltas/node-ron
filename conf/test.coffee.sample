@@ -1,5 +1,5 @@
 
 module.exports =
-    port: 4501
-    host: 'localhost'
-    name: 'test'
+  port: 4501
+  host: 'localhost'
+  name: 'test'

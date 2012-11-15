@@ -1,34 +1,34 @@
 {
-    "name": "ron",
-    "description": "Redis ORM for NodeJs.",
-    "keywords": ["redis", "orm", "database", "nosql"],
-    "version": "0.0.7",
-    "homepage": "http://www.adaltas.com/projects/node-ron",
-    "author": "David Worms <david@adaltas.com>",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/wdavidw/node-ron"
-    },
-    "bugs": {
-        "email": "open@adaltas.com",
-        "url": "http://github.com/wdavidw/node-ron/issues"
-    },
-    "dependencies": {
-        "coffee-script": "latest",
-        "redis": "latest"
-    },
-    "devDependencies": {
-        "each": "latest",
-        "mecano": "latest",
-        "mocha": "latest",
-        "should": "latest"
-    },
-    "contributors": [ 
-        { "name": "David Worms", "email": "david@adaltas.com" }
-    ],
-    "main": "index",
-    "engines": { "node": ">= 0.4.0" },
-    "scripts": {
-        "test": "make test"
-    }
+  "name": "ron",
+  "description": "Redis ORM for NodeJs.",
+  "keywords": ["redis", "orm", "database", "nosql"],
+  "version": "0.0.7",
+  "homepage": "http://www.adaltas.com/projects/node-ron",
+  "author": "David Worms <david@adaltas.com>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wdavidw/node-ron"
+  },
+  "bugs": {
+    "email": "open@adaltas.com",
+    "url": "http://github.com/wdavidw/node-ron/issues"
+  },
+  "dependencies": {
+    "coffee-script": "latest",
+    "redis": "latest"
+  },
+  "devDependencies": {
+    "each": "latest",
+    "mecano": "latest",
+    "mocha": "latest",
+    "should": "latest"
+  },
+  "contributors": [ 
+    { "name": "David Worms", "email": "david@adaltas.com" }
+  ],
+  "main": "index",
+  "engines": { "node": ">= 0.4.0" },
+  "scripts": {
+    "test": "make test"
+  }
 }

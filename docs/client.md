@@ -3,7 +3,7 @@ language: en
 layout: page
 title: "
 Client connection"
-date: 2012-10-01T07:39:11.603Z
+date: 2012-11-15T21:16:28.466Z
 comments: false
 sharing: false
 footer: false
@@ -17,28 +17,31 @@ and manipulation.
 
 Internally, Ron use the [Redis client for Node.js](https://github.com/mranney/node_redis).
 
-<a name="ron"></a>`ron([options])` Client creation
+<a name="ron"></a>
+`ron([options])` Client creation
 --------------------------------
 
-`options`               Options properties include:   
+`options`           Options properties include:   
 
-*   `name`              A namespace for the application, all keys with be prefixed with "#{name}:". Default to "ron"   
-*   `redis`             Provide an existing instance in case you don't want a new one to be created.   
-*   `host`              Redis hostname.   
-*   `port`              Redis port.   
-*   `password`          Redis password.   
-*   `database`          Redis database (an integer).   
+*   `name`          A namespace for the application, all keys with be prefixed with "#{name}:". Default to "ron"   
+*   `redis`         Provide an existing instance in case you don't want a new one to be created.   
+*   `host`          Redis hostname.   
+*   `port`          Redis port.   
+*   `password`      Redis password.   
+*   `database`      Redis database (an integer).   
 
 Basic example:
 ```coffeescript
+
 ron = require 'ron'
 client = ron
-    host: '127.0.0.1'
-    port: 6379
+  host: '127.0.0.1'
+  port: 6379
 ```
 
 
-<a name="get"></a>`get(schema)` Records definition and access
+<a name="get"></a>
+`get(schema)` Records definition and access
 -------------------------------------------
 Return a records instance. If the `schema` argument is an object, a new 
 instance will be created overwriting any previously defined instance 
@@ -48,16 +51,18 @@ with the same name.
 
 Define a record from a object:
 ```coffeescript
+
 client.get
-    name: 'users'
-    properties:
-        user_id: identifier: true
-        username: unique: true
-        email: index: true
+  name: 'users'
+  properties:
+    user_id: identifier: true
+    username: unique: true
+    email: index: true
 
 ```
 Define a record from function calls:
 ```coffeescript
+
 Users = client.get 'users'
 Users.identifier 'user_id'
 Users.unique 'username'
@@ -73,12 +78,13 @@ client.get 'username', temporal: true, properties: username: unique: true
 ```
 
 
-<a name="quit"></a>`quit(callback)` Quit
+<a name="quit"></a>
+`quit(callback)` Quit
 ---------------------
 Destroy the redis connection.
 
-`callback`              Received parameters are:   
+`callback`        Received parameters are:   
 
-*   `err`               Error object if any.   
-*   `status`            Status provided by the redis driver 
+*   `err`         Error object if any.   
+*   `status`      Status provided by the redis driver 
 
