@@ -19,7 +19,7 @@ convert_code = (text) ->
 
 each( ['Client', 'Schema', 'Records'] )
 .parallel( true )
-.on 'item', (next, file) ->
+.on 'item', (file, next) ->
   source = "#{__dirname}/#{file}.coffee"
   destination = "#{__dirname}/../doc/#{file.toLowerCase()}.md"
   fs.readFile source, 'ascii', (err, content) ->
