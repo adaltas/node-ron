@@ -1,4 +1,4 @@
-[![Build Status](https://secure.travis-ci.org/wdavidw/node-ron.png)](http://travis-ci.org/wdavidw/node-ron)
+node[![Build Status](https://secure.travis-ci.org/wdavidw/node-ron.png)](http://travis-ci.org/wdavidw/node-ron)
 
 Redis ORM for NodeJs
 ====================
@@ -17,8 +17,8 @@ Usage
 ron = require('ron');
 // Client connection
 client = ron({
-  port: 6379
-  host: '127.0.0.1'
+  port: 6379,
+  host: '127.0.0.1',
   name: 'auth'
 });
 // Schema definition
@@ -33,7 +33,7 @@ Users.create(
   function(err, user){
     console.log(err, user.id);
   }
-)
+);
 ```
 
 The library provide
