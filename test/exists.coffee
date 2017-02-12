@@ -2,7 +2,7 @@
 should = require 'should'
 
 try config = require '../conf/test' catch e
-ron = if process.env.RON_COV then require '../lib-cov/ron' else require '../lib/ron'
+ron = require '../lib/ron'
 
 client = Users = null
 
@@ -84,5 +84,3 @@ describe 'exists', ->
       should.not.exist err
       should.not.exist exists
       Users.clear next
-
-

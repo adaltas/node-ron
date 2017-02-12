@@ -2,7 +2,7 @@
 should = require 'should'
 
 try config = require '../conf/test' catch e
-ron = if process.env.RON_COV then require '../lib-cov/ron' else require '../lib/ron'
+ron = require '../lib/ron'
 
 client = Users = null
 
@@ -137,7 +137,3 @@ describe 'create', ->
       Users.get 1, (err, user) ->
         user.username.should.equal 'my_username_1'
         Users.clear next
-
-
-
-

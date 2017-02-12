@@ -2,7 +2,7 @@
 should = require 'should'
 
 try config = require '../conf/test' catch e
-ron = if process.env.RON_COV then require '../lib-cov/ron' else require '../lib/ron'
+ron = require '../lib/ron'
 
 client = Users = null
 
@@ -120,14 +120,3 @@ describe 'get', ->
         Object.keys(users).length.should.eql 3
         for id, user of users then id.should.eql "#{user.user_id}"
         Users.clear next
-
-
-
-
-
-
-
-
-
-
-

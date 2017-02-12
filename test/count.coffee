@@ -2,7 +2,7 @@
 should = require 'should'
 
 try config = require '../conf/test' catch e
-ron = if process.env.RON_COV then require '../lib-cov/ron' else require '../lib/ron'
+ron = require '../lib/ron'
 
 
 client = Users = null
@@ -68,4 +68,3 @@ describe 'count', ->
           counts[0].should.eql 2
           counts[1].should.eql 1
           Users.clear next
-
