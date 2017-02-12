@@ -37,7 +37,7 @@ describe 'create', ->
       password: 'my_password'
     , (err, user) ->
       should.not.exist err
-      user.user_id.should.be.a 'number'
+      user.user_id.should.be.a.Number()
       user.email.should.eql 'my@email.com'
       # toto: Replace by User.remove
       Users.clear next
@@ -101,7 +101,7 @@ describe 'create', ->
     ], identifiers: true, (err, ids) ->
       should.not.exist err
       ids.length.should.equal 2
-      for id in ids then id.should.be.a 'number'
+      for id in ids then id.should.be.a.Number()
       Users.clear next
 
   it 'should only return selected properties', (next) ->

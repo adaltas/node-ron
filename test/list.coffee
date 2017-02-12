@@ -111,5 +111,5 @@ describe 'list', ->
       Users.list { identifiers: true }, (err, ids) ->
         should.not.exist err
         ids.length.should.eql 2
-        for id in ids then id.should.be.a 'number'
+        for id in ids then id.should.be.a.Number()
         Users.clear next
