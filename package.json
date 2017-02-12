@@ -4,6 +4,7 @@
   "description": "Redis ORM for NodeJs.",
   "keywords": ["redis", "orm", "database", "nosql"],
   "homepage": "http://www.adaltas.com/projects/node-ron",
+  "license": "BSD-3-Clause",
   "author": "David Worms <david@adaltas.com>",
   "repository": {
     "type": "git",
