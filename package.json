@@ -30,6 +30,8 @@
   "main": "index",
   "engines": { "node": ">= 0.4.0" },
   "scripts": {
-    "coffee": "coffee -b -o lib src"
+    "coffee": "coffee -b -o lib src",
+    "pretest": "cp -n conf/test.coffee.sample conf/test.coffee; coffee -b -o lib src",
+    "test": "mocha"
   }
 }
