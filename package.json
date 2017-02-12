@@ -15,14 +15,14 @@
     "url": "http://github.com/adaltas/node-ron/issues"
   },
   "dependencies": {
-    "redis": "latest"
+    "redis": "^2.6.5"
   },
   "devDependencies": {
-    "coffee-script": "latest",
-    "each": "latest",
-    "mecano": "latest",
-    "mocha": "latest",
-    "should": "latest"
+    "coffee-script": "^1.11.1",
+    "each": "^0.6.1",
+    "mecano": "^0.6.0",
+    "mocha": "^2.4.5",
+    "should": "^11.1.0"
   },
   "contributors": [ 
     { "name": "David Worms", "email": "david@adaltas.com" }
