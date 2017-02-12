@@ -81,14 +81,17 @@ Records API
 Run tests
 ---------
 
-Start a redis server on the default port
-```bash
-redis-server ./conf/redis.conf
-```
-
 Run the tests with mocha:
 ```bash
-make test
+npm run redis_start
+npm test
+npm run redis_stop
 ```
 
+Note, the command above use a Docker container. You can use you're own Redis server by only running `npm test` after modifying the configuration file located in "conf/test.coffee".
 
+If Redis is installed, start a redis server on the default port: 
+`redis-server ./conf/redis.conf`
+
+If Docker is installed, start a container: 
+`docker run --name ron -p 6379:6379 -d redis redis-server --appendonly yes`
