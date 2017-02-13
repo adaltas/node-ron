@@ -2,7 +2,7 @@
 should = require 'should'
 
 try config = require '../conf/test' catch e
-ron = require '../lib/ron'
+ron = require '../lib'
 
 describe 'client get', ->
 

@@ -26,7 +26,7 @@
   "contributors": [ 
     { "name": "David Worms", "email": "david@adaltas.com" }
   ],
-  "main": "index",
+  "main": "lib/index",
   "engines": { "node": ">= 0.4.0" },
   "scripts": {
     "coffee": "coffee -b -o lib src",
